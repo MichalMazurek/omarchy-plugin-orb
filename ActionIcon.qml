@@ -8,6 +8,8 @@ Item {
     property color ink: Commons.Color.menu.text
     property bool selected: false
     readonly property bool branded: name === "codex" || name === "claude" || name === "grok"
+    // The same starter glyphs used by Omarchy's Agents panel.
+    readonly property string starterGlyph: name === "themes" ? "󰏘" : name === "plugins" ? "󰐱" : name === "app" ? "󰣆" : ""
     readonly property color surface: Commons.Color.menu.background
     function linear(channel) {
         return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
@@ -24,9 +26,19 @@ Item {
         sourceSize.height: Math.ceil(height * 2)
         fillMode: Image.PreserveAspectFit
     }
+    Text {
+        anchors.fill: parent
+        visible: !mark.visible && icon.starterGlyph !== ""
+        text: icon.starterGlyph; textFormat: Text.PlainText
+        font.family: Commons.Style.font.family
+        font.pixelSize: height
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        color: icon.selected ? "#ffffff" : icon.ink
+    }
     LineIcon {
         anchors.fill: parent
-        visible: !mark.visible
+        visible: !mark.visible && icon.starterGlyph === ""
         name: icon.branded ? "agents" : icon.name
         ink: icon.selected ? "#ffffff" : icon.ink
     }
