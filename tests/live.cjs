@@ -31,7 +31,7 @@ async function until(fn, message, timeout=4000) {
 }
 async function open() {
   ipc('shell','summon',id,'{}');
-  return until(()=>{const s=status();return s.opened&&s.positioned&&s.opacity===1?s:false;},'Wheel did not become visible');
+  return until(()=>{const s=status();return s.opened&&s.positioned&&s.ready&&s.revealed&&s.visible&&s.opacity===1?s:false;},'Wheel did not become visible');
 }
 const pass = (name,detail={}) => {report.push({name,pass:true,...detail});console.log('PASS:',name);};
 function layers() {
@@ -41,7 +41,9 @@ function layers() {
   try {
     dispatch('hl.dsp.focus({ workspace = "name:orb-demo" })');
     move(960,560);
-    let s=await open();
+    let s;
+    if(!process.argv.includes('--menus-only')) {
+    s=await open();
     key('Right'); assert.equal(status().selected,0);
     key('Left'); assert.equal(status().selected,5);
     key('3'); assert.equal(status().selected,2);
@@ -82,7 +84,11 @@ function layers() {
         } else {key(String(index+1));key('Return');}
         await until(()=>!status().opened,'Wheel failed to dismiss after activation');
         const result=await until(()=>{
-          if(index<3) {const active=json('hyprctl','activewindow','-j');return expected.test(active.class||'')?{class:active.class}:false;}
+          if(index<3) {
+            const created=json('hyprctl','clients','-j').find(w=>!before.includes(w.address)&&expected.test(w.class));
+            if(created)return {class:created.class};
+            const active=json('hyprctl','activewindow','-j');return index===0&&expected.test(active.class||'')?{class:active.class}:false;
+          }
           const names=layers();return names.some(n=>expected.test(n))?{layers:names.filter(n=>expected.test(n))}:false;
         },`${label} did not open`,9000);
         assert.equal(status().lastAction,label);
@@ -95,8 +101,15 @@ function layers() {
         await sleep(250);
       }
     }
+    }
     move(960,560);s=await open();
-    assert.ok(s.diameter <= 330, 'Compact default is too large');
+    assert.ok(s.diameter <= 280, 'Compact default is too large');
+    key('5');key('Return');assert.equal(status().submenu,'Settings');
+    assert.deepEqual(status().items,['Themes','Plugins']);
+    assert.equal(status().menuWidth,s.diameter);
+    assert.equal(status().menuX,s.x);assert.equal(status().menuY,s.y);
+    move(s.x+s.diameter/2,s.y+s.diameter/2,272);
+    assert.equal(status().submenu,'');assert.equal(status().opened,true);
     key('6');key('Return');
     await until(()=>!status().loading && status().items.length, 'Installed agents did not load');
     assert.equal(status().submenu,'Agents');
@@ -108,7 +121,50 @@ function layers() {
     key('Down');assert.equal(status().selected,0);
     key('Escape');assert.equal(status().submenu,'');assert.equal(status().opened,true);
     key('Escape');assert.equal(status().opened,false);
-    pass('Compact wheel, installed-only agent list, submenu navigation and Back/Escape', {agents:expectedAgents});
+    pass('Compact circular menus, installed-only agents, centre-click back and Escape', {agents:expectedAgents});
+    if(process.argv.includes('--agents')) {
+      const agentFile=path.join(process.env.HOME,'.config/omarchy/defaults/agent');
+      const defaultBefore=fs.existsSync(agentFile)?fs.readFileSync(agentFile,'utf8'):null;
+      const before=json('hyprctl','clients','-j').map(w=>w.address);
+      move(960,560);s=await open();
+      run('grim','-g',`${Math.floor(s.x-10)},${Math.floor(s.y-10)} ${Math.ceil(s.diameter+20)}x${Math.ceil(s.diameter+58)}`,`${artifacts}/orb-compact.png`);
+      const angle=(5*60-90)*Math.PI/180;
+      move(s.x+s.diameter/2+Math.cos(angle)*s.diameter*.33,s.y+s.diameter/2+Math.sin(angle)*s.diameter*.33,272);
+      await until(()=>status().submenu==='Agents'&&!status().loading&&status().items.length,'Agent submenu failed');
+      s=status();
+      run('grim','-g',`${Math.floor(s.menuX-10)},${Math.floor(s.menuY-10)} ${Math.ceil(s.menuWidth+20)}x${Math.ceil(s.menuHeight+20)}`,`${artifacts}/orb-agents.png`);
+      const codex=s.items.indexOf('Codex');assert.ok(codex>=0);
+      const ca=(codex*360/s.visibleItems.length-90)*Math.PI/180;
+      move(s.x+s.diameter/2+Math.cos(ca)*s.diameter*.33,s.y+s.diameter/2+Math.sin(ca)*s.diameter*.33,272);
+      const launched=await until(()=>json('hyprctl','clients','-j').find(w=>!before.includes(w.address)&&w.class==='org.omarchy.agent'),'Agent terminal did not launch',9000);
+      await sleep(700);
+      assert.equal(status().lastAction,'Codex');assert.equal(status().opened,false);
+      assert.equal(fs.existsSync(agentFile)?fs.readFileSync(agentFile,'utf8'):null,defaultBefore);
+      dispatch(`hl.dsp.window.close({ window = "address:${launched.address}" })`);
+      pass('Pointer opens Agents and launches Codex in the agent terminal; default agent unchanged');
+    }
+    if(process.argv.includes('--settings')) {
+      for(const [label,row,namespace] of [['Themes',0,'omarchy-image-selector'],['Plugins',1,'omarchy-menu']]) {
+        move(960,560);s=await open();
+        const a=(4*60-90)*Math.PI/180;
+        move(s.x+s.diameter/2+Math.cos(a)*s.diameter*.33,s.y+s.diameter/2+Math.sin(a)*s.diameter*.33,272);
+        s=status();assert.equal(s.submenu,'Settings');
+        if (row===0) run('grim','-g',`${Math.floor(s.x-10)},${Math.floor(s.y-10)} ${Math.ceil(s.diameter+20)}x${Math.ceil(s.diameter+58)}`,`${artifacts}/orb-settings.png`);
+        const ra=(row*360/s.visibleItems.length-90)*Math.PI/180;
+        move(s.x+s.diameter/2+Math.cos(ra)*s.diameter*.33,s.y+s.diameter/2+Math.sin(ra)*s.diameter*.33,272);
+        await until(()=>layers().includes(namespace),`${label} failed to open`);
+        assert.equal(status().lastAction,label);key('Escape');
+        pass(`Pointer activates Settings → ${label}`);
+      }
+      const before=json('hyprctl','clients','-j').map(w=>w.address);
+      move(960,560);s=await open();
+      const a=Math.PI/6;
+      move(s.x+s.diameter/2+Math.cos(a)*s.diameter*.33,s.y+s.diameter/2+Math.sin(a)*s.diameter*.33,272);
+      const files=await until(()=>json('hyprctl','clients','-j').find(w=>!before.includes(w.address)&&/nautilus/i.test(w.class)),'Files pointer launch failed',9000);
+      assert.equal(status().lastAction,'Files');
+      dispatch(`hl.dsp.window.close({ window = "address:${files.address}" })`);
+      pass('Compact wheel pointer launches Files');
+    }
     if(process.argv.includes('--theme')) {
       const home=process.env.HOME;
       const current=`${home}/.local/state/omarchy/current/theme`;

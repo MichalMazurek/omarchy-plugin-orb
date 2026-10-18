@@ -6,7 +6,7 @@
 
 **Interaction inspiration: Tangerine for Mac.** Orb is an original implementation for Omarchy, with original icons and QML; it contains no Tangerine code or assets. Built from Tom Ballard's Omarchy plugin starter and [Build Omarchy Plugins](https://github.com/tcballard/build-omarchy-plugins). [Credits](CREDITS.md).
 
-Press **Super+Alt+O**, hover an action, and click. Browser, Terminal, Files, Screenshot, Themes and Plugins use existing Omarchy launchers. Orb runs inside Quattro's existing shell, with its active colours, font sizing and reduced-motion setting.
+Press **Super+Alt+O**, hover an action, and click. The compact wheel opens Browser, Terminal, Files and Screenshot directly. **Settings → Themes / Plugins** and **Agents → installed clients** open circular submenus in the same wheel. Launches use existing Omarchy terminal and application launchers. Orb runs inside Quattro's existing shell, with its active colours, font sizing and reduced-motion setting.
 
 ## Install the prototype
 
@@ -28,13 +28,13 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 
 ## Use and configure
 
-- Hover a sector and left-click to launch. Clicking the neutral centre cancels.
+- Hover a sector and left-click to launch. Clicking the centre goes back in a submenu or cancels at the top level.
 - Arrow keys or Tab/Shift+Tab cycle; 1–6 select; Enter launches.
-- Escape, outside click, or the summon shortcut again dismisses.
+- Escape/Left/Backspace or the centre button returns from a submenu. Escape on the wheel, outside click, or the summon shortcut again dismisses.
 - The wheel and keyboard hint stay clear of monitor edges and reserved bar space.
 - Opening animates for 190ms; system reduced motion is respected.
 
-Edit `~/.config/omarchy/orb.json` for six labels, built-in icon names, command argument arrays, diameter, animation and shortcut. See [the example](config.example.json). Commands run without shell-string evaluation. Other changes load live; **rerun `./install` after changing the shortcut**. Invalid configuration retains the last valid actions and shows an error hint.
+Edit `~/.config/omarchy/orb.json` for six top-level labels, icons, command argument arrays, one-level `children` menus, an installed-agent menu (`"menu": "agents"`), diameter, animation and shortcut. The default diameter is 240 theme units, currently 280px on the XPS. See [the example](config.example.json). Commands run without shell-string evaluation. Other changes load live; **rerun `./install` after changing the shortcut**. Invalid configuration retains the last valid actions and shows an error hint.
 
 ```bash
 omarchy-shell shell toggle io.github.tcballard.orb
@@ -48,7 +48,7 @@ Remove from the source checkout with `./uninstall`. It removes this plugin and i
 
 Developed on a Dell XPS 9320, 1920×1200 at scale 1, Omarchy dev `5f7aaeb8c`. [Acceptance evidence](docs/ACCEPTANCE.json) separates portable checks from direct desktop tests. [Development](docs/DEVELOPMENT.md) · [Architecture](ARCHITECTURE.md) · [Demo and recording](docs/DEMO.md).
 
-Six actions, no nested menus or visual editor. Multiple physical monitors, hotplug and fractional scaling need further live testing. Screenshot verification covers opening and cancelling the capture UI, not saving a capture. Theme verification uses real shell palette-change IPC and restores it; full desktop/app retinting is not exercised. Physical shortcut presses need a human check; automation uses the registered dispatcher and real Wayland input.
+Six top-level entries with one submenu level; no visual editor. Agent discovery filters out first-run installer wrappers, requires a real installed executable, and does not alter the default agent. Multiple physical monitors, hotplug and fractional scaling need further live testing. Screenshot verification covers opening and cancelling the capture UI, not saving a capture. Theme verification uses real shell palette-change IPC and restores it; full desktop/app retinting is not exercised. Physical shortcut presses need a human check; automation uses the registered dispatcher and real Wayland input.
 
 No release or marketplace listing has been published.
 

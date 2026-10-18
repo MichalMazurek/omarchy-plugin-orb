@@ -1,5 +1,7 @@
 # Real desktop demo
 
+Recording is on hold at the user’s request while the visual design is being refined. The recording harness predates the compact-menu revision; recheck it before a future recording.
+
 On an empty workspace, move the pointer near the centre, press Super+Alt+O, hover Browser → Terminal → Files, and click Terminal. Summon again and press Escape. One real launch plus cancellation makes a useful 15-second clip.
 
 ```bash

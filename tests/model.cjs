@@ -29,6 +29,19 @@ for (const size of [240, 280, 340, 440, 600]) {
     assert.equal(model.hit(size/2 + Math.cos(angle)*size*.33, size/2 + Math.sin(angle)*size*.33, size), i);
   }
 }
+// Each submenu retains radial hit regions, including single-action and empty states.
+for (const count of [0,1,2,3,4,5,6]) {
+  assert.equal(model.hit(140,140,280,count),-1);
+  if (!count) assert.equal(model.hit(140,45,280,count),-1);
+  for (let i=0;i<count;i++) {
+    const angle=(i*360/count-90)*Math.PI/180;
+    assert.equal(model.hit(140+Math.cos(angle)*92,140+Math.sin(angle)*92,280,count),i);
+    for (const offset of [-.45,.45]) {
+      const edge=(i*360/count+offset*360/count-90)*Math.PI/180;
+      assert.equal(model.hit(140+Math.cos(edge)*92,140+Math.sin(edge)*92,280,count),i);
+    }
+  }
+}
 // Corners, off-screen cursor, bars on each edge, logical fractional-scale dimensions.
 for (const [w,h] of [[1920,1200],[1280,800],[800,600]]) {
   for (const reserved of [[0,30,0,0],[55,0,0,0],[0,0,60,45]]) {

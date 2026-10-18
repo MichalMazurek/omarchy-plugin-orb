@@ -26,12 +26,15 @@ function parse(raw, fallback) {
     }
     return { config: { actions: actions, diameter: Math.max(220, Math.min(600, Number(value.diameter) || 240)), animation: value.animation !== false }, error: "" };
 }
-function hit(x, y, diameter) {
+function hit(x, y, diameter, count) {
+    if (count === undefined) count = 6;
+    if (count < 1) return -1;
     var dx = x - diameter / 2, dy = y - diameter / 2;
     var r = Math.sqrt(dx * dx + dy * dy) / diameter;
     if (r < 0.18 || r > 0.48) return -1;
-    var angle = (Math.atan2(dy, dx) * 180 / Math.PI + 120 + 360) % 360;
-    return Math.floor(angle / 60) % 6;
+    var step = 360 / count;
+    var angle = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + step / 2 + 360) % 360;
+    return Math.floor(angle / step) % count;
 }
 function placement(px, py, width, height, reserved, preferred) {
     var r = reserved || [0, 0, 0, 0], pad = 12, footer = 38;
