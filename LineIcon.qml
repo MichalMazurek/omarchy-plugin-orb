@@ -16,7 +16,11 @@ Canvas {
         c.lineCap = "round"; c.lineJoin = "round";
         function line(points) { c.beginPath(); c.moveTo(points[0], points[1]); for (var i = 2; i < points.length; i += 2) c.lineTo(points[i], points[i+1]); c.stroke(); }
         function circle(x,y,r) { c.beginPath(); c.arc(x,y,r,0,Math.PI*2); c.stroke(); }
-        if (name === "browser") {
+        if (name === "arrow-undo") {
+            line([8,4,3,9,8,14]);
+            c.beginPath(); c.moveTo(3,9); c.lineTo(14,9);
+            c.bezierCurveTo(23,9,23,20,14,20); c.stroke();
+        } else if (name === "browser") {
             circle(12,12,9); line([3,12,21,12]);
             c.beginPath(); c.ellipse(8,3,8,18); c.stroke();
         } else if (name === "terminal") {

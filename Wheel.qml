@@ -458,25 +458,12 @@ Item {
                     shadowOpacity: root.hubActive ? 0.85 : 0
                     Behavior on shadowOpacity { NumberAnimation { duration: root.config.animation ? Commons.Style.duration(140) : 0 } }
                 }
-                Column {
+                LineIcon {
                     visible: !!root.submenuTitle
-                    anchors.centerIn: parent; spacing: 0
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "‹"; textFormat: Text.PlainText
-                        font.family: Commons.Style.font.family
-                        font.pixelSize: 26
-                        color: Commons.Color.menu.text
-                    }
-                    Text {
-                        visible: !!root.submenuTitle
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: wheel.width * 0.29
-                        text: root.submenuTitle; textFormat: Text.PlainText
-                        horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
-                        font.family: Commons.Style.font.menuFamily; font.pixelSize: 11
-                        color: Commons.Color.menu.text
-                    }
+                    anchors.centerIn: parent
+                    width: parent.width * 0.42; height: width
+                    name: "arrow-undo"
+                    ink: root.hubActive ? "#ffffff" : Commons.Color.menu.text
                 }
             }
             PointerMoveGate { id: moveGate; referenceItem: wheel }
