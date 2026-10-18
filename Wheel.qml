@@ -30,7 +30,6 @@ Item {
     readonly property int pageCount: submenuTitle ? Math.max(1, Math.ceil(menuRows.length / 6)) : 1
     readonly property var wheelActions: submenuTitle ? menuRows.slice(menuPage * 6, menuPage * 6 + 6) : config.actions
     readonly property int selectionCount: wheelActions.length
-    readonly property bool iconsOnly: wheel.width < 300
     property string configError: ""
     property var pendingCommand: []
     property string pendingDesktopId: ""
@@ -174,7 +173,7 @@ Item {
     function status() {
         return JSON.stringify({ opened: opened, positioned: positioned, selected: selected,
             keyboard: keyboardMode, x: wheel.x, y: wheel.y, diameter: wheel.width,
-            iconsOnly: iconsOnly, selectionCaption: hint.text,
+            iconsOnly: true, selectionCaption: hint.text,
             hubActive: hubActive,
             settingsOpen: settingsOpen, settingsSaving: settingsSaving, settingsError: settingsError,
             settingsX: settingsCard.x, settingsY: settingsCard.y, settingsWidth: settingsCard.width, settingsHeight: settingsCard.height,
@@ -412,28 +411,16 @@ Item {
                     readonly property real angle: (index * 360 / root.selectionCount - 90) * Math.PI / 180
                     readonly property bool chosen: root.selected === index
                     width: wheel.width * (root.selectionCount > 6 ? 0.24 : 0.28)
-                    height: root.iconsOnly ? Math.max(24, wheel.width * 0.09) : wheel.width * 0.16
+                    height: Math.max(24, wheel.width * 0.09)
                     x: wheel.width/2 + Math.cos(angle) * wheel.width * 0.33 - width/2
                     y: wheel.height/2 + Math.sin(angle) * wheel.width * 0.33 - height/2
                     ActionIcon {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        y: 0; width: root.iconsOnly ? parent.height : Math.max(22, wheel.width * 0.072); height: width
+                        y: 0; width: parent.height; height: width
                         name: modelData.icon
                         appSource: root.appIconSource(modelData)
                         selected: parent.chosen
                         ink: Commons.Color.menu.text
-                    }
-                    Text {
-                        visible: !root.iconsOnly
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        y: Math.max(29, wheel.width * 0.10)
-                        width: parent.width; horizontalAlignment: Text.AlignHCenter
-                        wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
-                        text: modelData.label + (modelData.menu || modelData.children ? " ›" : ""); textFormat: Text.PlainText
-                        color: parent.chosen ? "#ffffff" : Commons.Color.menu.text
-                        font.family: Commons.Style.font.menuFamily
-                        font.pixelSize: Math.max(11, wheel.width * 0.035)
-                        font.weight: parent.chosen ? Font.DemiBold : Font.Normal
                     }
                 }
             }

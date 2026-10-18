@@ -4,11 +4,11 @@ const config=process.env.HOME+'/.config/omarchy/orb.json',originalSize=JSON.pars
 function setSize(size){const current=JSON.parse(fs.readFileSync(config));current.diameter=size;fs.writeFileSync(config+'.compact-test',JSON.stringify(current,null,2)+'\n');fs.renameSync(config+'.compact-test',config);}
 (async()=>{try{
 await until(()=>{try{return !!status();}catch{return false;}},'Orb did not load');
-for(const [size,compact] of [[240,true],[260,false]]){
+for(const [size,compact] of [[240,true],[260,true]]){
  setSize(size);testSize=size;await sleep(250);move(960,500);ipc('shell','summon',id,'{}');await until(()=>status().opacity===1&&status().iconsOnly===compact,'Wrong compact state');await sleep(200);
  const s=status(),index=s.visibleItems.indexOf('Make something cool');assert.ok(index>=0);const a=(index*360/s.visibleItems.length-90)*Math.PI/180;move(s.x+s.diameter/2+Math.cos(a)*s.diameter*.33,s.y+s.diameter/2+Math.sin(a)*s.diameter*.33);await until(()=>status().selectionCaption==='Make something cool','Full caption missing');
- assert.equal(s.diameter<300,compact);run('grim','-g',`${Math.floor(s.x-8)},${Math.floor(s.y-8)} ${Math.ceil(s.diameter+16)}x${Math.ceil(s.diameter+54)}`,repo+'/artifacts/orb-'+(compact?'compact':'labelled')+'-caption.png');
+ assert.equal(s.iconsOnly,true);run('grim','-g',`${Math.floor(s.x-8)},${Math.floor(s.y-8)} ${Math.ceil(s.diameter+16)}x${Math.ceil(s.diameter+54)}`,repo+'/artifacts/orb-'+String(size)+'-caption.png');
  key('1');assert.equal(status().selectionCaption,status().visibleItems[0]);key(String(index+1));key('Return');await until(()=>status().submenu==='Make something cool');key('1');assert.equal(status().selectionCaption,'New theme');assert.equal(status().iconsOnly,compact);key('Escape');key('Escape');
- pass(`${s.diameter}px: ${compact?'icons only':'sector labels visible'}, full pointer/keyboard caption, circular submenu caption`);
+ pass(`${s.diameter}px: icons only, full pointer/keyboard caption, circular submenu caption`);
 }
 }finally{ipc('shell','hide',id);if(JSON.parse(fs.readFileSync(config)).diameter===testSize)setSize(originalSize);if(saved.focus)run('hyprctl','dispatch',`hl.dsp.focus({window="address:${saved.focus}"})`);move(saved.pointer.x,saved.pointer.y);fs.writeFileSync(repo+'/artifacts/compact-live-results.json',JSON.stringify({date:new Date().toISOString(),report},null,2));}})().catch(e=>{console.error(e);process.exitCode=1;});

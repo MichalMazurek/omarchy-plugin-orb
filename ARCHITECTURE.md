@@ -26,4 +26,4 @@ Six slots remain the default. The settings panel can append a seventh/eighth slo
 
 The optional Make something cool catalog entry contains the same three starter prompts as Omarchy’s Agents panel. It uses normal one-level children and the supported `omarchy agent prompt` CLI, so the default agent/account and existing terminal launch behavior stay with Omarchy. No separate agent service or hard-coded provider is added.
 
-The compact breakpoint uses the actual laid-out wheel diameter: below 300 logical pixels, sector labels are hidden and the icons are centred at the radial slot positions. The existing footer displays the full selected action label for both pointer and keyboard selection, including submenus. The footer keeps its existing reserved bounds, so this does not enlarge the overlay footprint.
+Sectors contain centred icons at every wheel diameter; there are no in-sector labels or size breakpoint. The existing footer displays the full selected action label for both pointer and keyboard selection, including submenus. The footer keeps its existing reserved bounds, so this does not enlarge the overlay footprint.
