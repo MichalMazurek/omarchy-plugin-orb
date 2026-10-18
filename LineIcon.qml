@@ -29,6 +29,12 @@ Canvas {
         } else if (name === "themes") {
             circle(12,12,9); circle(8,9,1); circle(13,7,1); circle(17,11,1);
             line([6,17,11,12,16,17]);
+        } else if (name === "agents") {
+            c.strokeRect(4,7,16,13); line([12,3,12,7]); circle(12,3,1);
+            circle(8,12,1); circle(16,12,1); line([9,17,15,17]);
+        } else if (name === "settings") {
+            line([3,6,21,6]); line([3,12,21,12]); line([3,18,21,18]);
+            c.fillStyle = ink; c.fillRect(7,3,3,6); c.fillRect(15,9,3,6); c.fillRect(8,15,3,6);
         } else {
             line([3,9,9,9,9,4,15,4,15,9,21,9,21,15,16,15,16,21,9,21,9,15,3,15,3,9]);
         }

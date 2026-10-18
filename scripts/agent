@@ -1,0 +1,25 @@
+#!/bin/bash
+set -euo pipefail
+script_dir=$(dirname -- "$(readlink -f -- "$0")")
+provider=${1:?agent id required}
+binary=$("$script_dir/agents" --resolve "$provider") || { echo 'This agent is no longer installed.' >&2; exit 1; }
+[[ $PWD != "$HOME" || ! -d $HOME/Work ]] || cd "$HOME/Work"
+# Respect Omarchy's selected account without changing the default agent or
+# adding permission-bypass flags. No prompts or tasks are sent to the agent.
+case "$provider" in
+  claude) account_var=CLAUDE_CONFIG_DIR ;;
+  codex) account_var=CODEX_HOME ;;
+  grok) account_var=GROK_HOME ;;
+  *) account_var='' ;;
+esac
+if [[ -n $account_var ]]; then
+  agent_home=$(omarchy-agent-account-home "$provider")
+  unset "$account_var"
+  export "OMARCHY_AGENT_${provider^^}_HOME=$agent_home"
+  [[ -z $agent_home ]] || export "$account_var=$agent_home"
+fi
+case "$provider" in
+  ori) exec "$binary" code ;;
+  openclaw) exec omarchy-launch-openclaw --tui ;;
+  *) exec "$binary" ;;
+esac

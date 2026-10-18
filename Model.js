@@ -1,21 +1,30 @@
 // Pure geometry and validation, shared by the hosted QML and Node tests.
-var icons = ["browser", "terminal", "files", "screenshot", "themes", "plugins"];
+var icons = ["browser", "terminal", "files", "screenshot", "themes", "plugins", "agents", "settings"];
+function action(a, depth) {
+    if (!a || typeof a.label !== "string" || !a.label.trim() || a.label.length > 20 || icons.indexOf(a.icon) < 0) return null;
+    var out = { label: a.label.trim(), icon: a.icon };
+    if (a.menu === "agents" && depth === 0 && !a.command && !a.children) { out.menu = "agents"; return out; }
+    if (Array.isArray(a.children) && depth === 0 && !a.command && !a.menu && a.children.length > 0 && a.children.length <= 12) {
+        out.children = a.children.map(function(c) { return action(c, 1); });
+        return out.children.every(function(c) { return c !== null; }) ? out : null;
+    }
+    if (a.children || a.menu || !Array.isArray(a.command) || a.command.length < 1 || a.command.length > 32
+        || a.command.some(function(s) { return typeof s !== "string" || s.length > 4096 || s.indexOf("\u0000") >= 0; }) || !a.command[0]) return null;
+    out.command = a.command.slice(); return out;
+}
 function parse(raw, fallback) {
     var value;
     try { value = JSON.parse(raw); } catch (error) { return { config: fallback, error: "Invalid JSON; using the last valid configuration." }; }
     if (!value || typeof value !== "object" || !Array.isArray(value.actions) || value.actions.length !== 6)
-        return { config: fallback, error: "Orbit requires exactly six actions." };
+        return { config: fallback, error: "Orb requires exactly six top-level actions." };
     var actions = [];
     for (var i = 0; i < 6; i++) {
-        var a = value.actions[i];
-        if (!a || typeof a.label !== "string" || !a.label.trim() || a.label.length > 20 || icons.indexOf(a.icon) < 0
-            || !Array.isArray(a.command) || a.command.length < 1 || a.command.length > 32
-            || a.command.some(function (s) { return typeof s !== "string" || s.length > 4096 || s.indexOf("\u0000") >= 0; })
-            || !a.command[0])
+        var a = action(value.actions[i], 0);
+        if (!a)
             return { config: fallback, error: "Invalid action " + (i + 1) + "; using the last valid configuration." };
-        actions.push({ label: a.label.trim(), icon: a.icon, command: a.command.slice() });
+        actions.push(a);
     }
-    return { config: { actions: actions, diameter: Math.max(340, Math.min(600, Number(value.diameter) || 440)), animation: value.animation !== false }, error: "" };
+    return { config: { actions: actions, diameter: Math.max(240, Math.min(600, Number(value.diameter) || 280)), animation: value.animation !== false }, error: "" };
 }
 function hit(x, y, diameter) {
     var dx = x - diameter / 2, dy = y - diameter / 2;

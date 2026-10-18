@@ -4,6 +4,15 @@ const model = require('../Model.js');
 const defaults = model.parse(fs.readFileSync(`${__dirname}/../config.example.json`, 'utf8'), null);
 assert.equal(defaults.error, '');
 assert.equal(defaults.config.actions.length, 6);
+assert.equal(defaults.config.diameter, 280);
+assert.equal(defaults.config.actions[5].menu, 'agents');
+assert.equal(defaults.config.actions[4].children[1].label, 'Plugins');
+const tooDeep = JSON.parse(fs.readFileSync(`${__dirname}/../config.example.json`, 'utf8'));
+tooDeep.actions[4].children[0] = {label:'More',icon:'settings',children:[tooDeep.actions[0]]};
+assert.ok(model.parse(JSON.stringify(tooDeep), defaults.config).error);
+const ambiguous = JSON.parse(fs.readFileSync(`${__dirname}/../config.example.json`, 'utf8'));
+ambiguous.actions[5].command=['false'];
+assert.ok(model.parse(JSON.stringify(ambiguous), defaults.config).error);
 assert.equal(model.parse('{', defaults.config).config, defaults.config);
 assert.ok(model.parse('{"actions":[]}', defaults.config).error);
 const adversarial = JSON.parse(fs.readFileSync(`${__dirname}/../config.example.json`, 'utf8'));
@@ -12,7 +21,7 @@ assert.ok(model.parse(JSON.stringify(adversarial), defaults.config).error);
 adversarial.actions[0].command = ['printf', '$(touch /tmp/no)'];
 adversarial.actions[0].label = '<img src="x">';
 assert.equal(model.parse(JSON.stringify(adversarial), defaults.config).config.actions[0].label, '<img src="x">');
-for (const size of [340, 440, 600]) {
+for (const size of [240, 280, 340, 440, 600]) {
   assert.equal(model.hit(size / 2, size / 2, size), -1);
   assert.equal(model.hit(-10, -10, size), -1);
   for (let i = 0; i < 6; i++) {

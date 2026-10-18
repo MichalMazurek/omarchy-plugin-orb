@@ -17,7 +17,15 @@ Item {
     property int selected: -1
     property bool keyboardMode: false
     property point pointer: Qt.point(0, 0)
-    property var config: ({ actions: [], diameter: 440, animation: true })
+    property var config: ({ actions: [], diameter: 280, animation: true })
+    property string submenuTitle: ""
+    property bool agentMenu: false
+    property var submenuRows: []
+    property var installedAgents: []
+    property string agentError: ""
+    property int parentSelection: -1
+    readonly property var menuRows: agentMenu ? installedAgents : submenuRows
+    readonly property int selectionCount: submenuTitle ? menuRows.length : config.actions.length
     property string configError: ""
     property var pendingCommand: []
     property string lastAction: ""
@@ -29,6 +37,8 @@ Item {
         try { JSON.parse(payloadJson || "{}"); } catch (error) {}
         launchDelay.stop(); pendingCommand = [];
         selected = -1; keyboardMode = false; positioned = false;
+        submenuTitle = ""; agentMenu = false; parentSelection = -1;
+        installedAgents = []; agentError = "";
         moveGate.reset(); opened = true;
         cursor.running = false; cursor.running = true;
         Qt.callLater(function() { keys.forceActiveFocus(); });
@@ -36,18 +46,35 @@ Item {
     function close() {
         opened = false; positioned = false; selected = -1;
         cursor.running = false; launchDelay.stop(); pendingCommand = [];
+        agents.running = false; submenuTitle = ""; agentMenu = false;
     }
     function dismiss() {
         close();
         if (shell && typeof shell.hide === "function") shell.hide(pluginId);
     }
     function select(delta) {
+        if (!selectionCount) return;
         keyboardMode = true; moveGate.reset();
-        selected = selected < 0 ? (delta > 0 ? 0 : 5) : (selected + delta + 6) % 6;
+        menuMoveGate.reset();
+        selected = selected < 0 ? (delta > 0 ? 0 : selectionCount - 1) : (selected + delta + selectionCount) % selectionCount;
+        if (submenuTitle) menuList.positionViewAtIndex(selected, ListView.Contain);
+    }
+    function back() {
+        if (!submenuTitle) { dismiss(); return; }
+        agents.running = false; submenuTitle = ""; agentMenu = false;
+        selected = parentSelection; keyboardMode = true; moveGate.reset();
     }
     function activate(index) {
-        if (!opened || index < 0 || index >= config.actions.length) return;
-        var action = config.actions[index];
+        if (!opened || index < 0 || index >= selectionCount) return;
+        var action = submenuTitle ? menuRows[index] : config.actions[index];
+        if (action.menu || action.children) {
+            parentSelection = index; submenuTitle = action.label;
+            agentMenu = action.menu === "agents";
+            submenuRows = action.children || [];
+            selected = -1; menuMoveGate.reset();
+            if (agentMenu) { agentError = ""; installedAgents = []; agents.running = true; }
+            return;
+        }
         var command = action.command.slice(); lastAction = action.label;
         dismiss();
         // Let the compositor unmap the exclusive layer before a new UI or screenshot.
@@ -60,7 +87,9 @@ Item {
             foreground: String(Commons.Color.menu.text), background: String(Commons.Color.menu.background),
             lastAction: lastAction, ready: panel.contentReady, revealed: panel.contentRevealed,
             opacity: wheel.opacity, visible: wheel.visible, windowWidth: panel.width, windowHeight: panel.height,
-            scale: panel.devicePixelRatio, monitorScale: panel.targetMonitor ? panel.targetMonitor.scale : 0 });
+            scale: panel.devicePixelRatio, monitorScale: panel.targetMonitor ? panel.targetMonitor.scale : 0,
+            submenu: submenuTitle, items: menuRows.map(function(a) { return a.label; }), loading: agents.running,
+            menuX: submenu.x, menuY: submenu.y, menuWidth: submenu.width, menuHeight: submenu.height, agentError: agentError });
     }
     FileView {
         id: defaults
@@ -114,6 +143,25 @@ Item {
             Quickshell.execDetached(args);
         }
     }
+    Process {
+        id: agents
+        command: [Qt.resolvedUrl("scripts/agents").toString().replace(/^file:\/\//, "")]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (!root.opened || !root.agentMenu) return;
+                try {
+                    var rows = JSON.parse(text);
+                    if (!Array.isArray(rows) || rows.length > 24) throw new Error("Invalid catalog");
+                    var checked = rows.map(function(a) { return Model.action(a, 1); });
+                    if (checked.some(function(a) { return !a; })) throw new Error("Invalid action");
+                    root.installedAgents = checked;
+                } catch (error) { root.agentError = "Could not read installed agents"; }
+            }
+        }
+        onExited: (code, status) => {
+            if (root.opened && root.agentMenu && code !== 0) root.agentError = "Could not read installed agents";
+        }
+    }
     IpcHandler {
         target: root.pluginId
         function status(): string { return root.status(); }
@@ -138,12 +186,12 @@ Item {
             anchors.fill: parent
             focus: root.opened
             Keys.onPressed: event => {
-                if (event.key === Qt.Key_Escape) root.dismiss();
+                if (event.key === Qt.Key_Escape || event.key === Qt.Key_Backspace || (root.submenuTitle && event.key === Qt.Key_Left)) root.back();
                 else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) root.activate(root.selected);
                 else if (event.key === Qt.Key_Right || event.key === Qt.Key_Down || (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier))) root.select(1);
                 else if (event.key === Qt.Key_Left || event.key === Qt.Key_Up || event.key === Qt.Key_Backtab || event.key === Qt.Key_Tab) root.select(-1);
-                else if (event.key >= Qt.Key_1 && event.key <= Qt.Key_6) {
-                    root.keyboardMode = true; moveGate.reset(); root.selected = event.key - Qt.Key_1;
+                else if (event.key >= Qt.Key_1 && event.key <= Qt.Key_9 && event.key - Qt.Key_1 < root.selectionCount) {
+                    root.keyboardMode = true; moveGate.reset(); menuMoveGate.reset(); root.selected = event.key - Qt.Key_1;
                 } else return;
                 event.accepted = true;
             }
@@ -154,7 +202,7 @@ Item {
             y: panel.placement.y
             width: panel.placement.size
             height: width
-            visible: root.positioned
+            visible: root.positioned && !root.submenuTitle
             opacity: root.opened && root.positioned && panel.contentRevealed ? 1 : 0
             scale: opacity > 0 ? 1 : 0.92
             Behavior on opacity { NumberAnimation { duration: root.config.animation ? Commons.Style.duration(150) : 0 } }
@@ -207,31 +255,23 @@ Item {
                     readonly property real angle: (index * 60 - 90) * Math.PI / 180
                     readonly property bool chosen: root.selected === index
                     width: wheel.width * 0.28
-                    height: wheel.width * 0.18
+                    height: wheel.width * 0.16
                     x: wheel.width/2 + Math.cos(angle) * wheel.width * 0.33 - width/2
                     y: wheel.height/2 + Math.sin(angle) * wheel.width * 0.33 - height/2
                     LineIcon {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        y: 2; width: wheel.width * 0.066; height: width
+                        y: 0; width: Math.max(22, wheel.width * 0.072); height: width
                         name: modelData.icon
                         ink: parent.chosen ? Commons.Color.accent : Commons.Color.menu.text
                     }
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        y: wheel.width * 0.09
-                        text: modelData.label; textFormat: Text.PlainText
+                        y: Math.max(29, wheel.width * 0.10)
+                        text: modelData.label + (modelData.menu || modelData.children ? " ›" : ""); textFormat: Text.PlainText
                         color: parent.chosen ? Commons.Color.accent : Commons.Color.menu.text
                         font.family: Commons.Style.font.menuFamily
-                        font.pixelSize: Math.max(11, wheel.width * 0.032)
+                        font.pixelSize: Math.max(11, wheel.width * 0.035)
                         font.weight: parent.chosen ? Font.DemiBold : Font.Normal
-                    }
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        y: wheel.width * 0.14
-                        text: String(index + 1); textFormat: Text.PlainText
-                        color: Commons.Util.alpha(Commons.Color.menu.text, parent.chosen ? 0.8 : 0.4)
-                        font.family: Commons.Style.font.family
-                        font.pixelSize: Math.max(9, wheel.width * 0.023)
                     }
                 }
             }
@@ -246,15 +286,8 @@ Item {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "ORB"; textFormat: Text.PlainText
                         font.family: Commons.Style.font.family
-                        font.pixelSize: wheel.width * 0.038; font.letterSpacing: 3
+                        font.pixelSize: Math.max(13, wheel.width * 0.042); font.letterSpacing: 3
                         color: Commons.Color.menu.text
-                    }
-                    Text {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: root.selected < 0 ? "Choose a direction" : root.keyboardMode ? "Enter to launch" : "Click to launch"
-                        textFormat: Text.PlainText
-                        font.family: Commons.Style.font.menuFamily; font.pixelSize: wheel.width * 0.023
-                        color: Commons.Util.alpha(Commons.Color.menu.text, 0.58)
                     }
                 }
             }
@@ -284,11 +317,71 @@ Item {
                 border.width: 1; border.color: Commons.Util.alpha(Commons.Color.menu.text, 0.16)
                 Text {
                     id: hint; anchors.centerIn: parent
-                    text: root.configError ? "Config error · using last valid actions" : "↑ ↓  select    ↵  launch    Esc  close"
+                    text: root.configError ? "Config error · using last valid actions" : "Select · click or Enter"
                     textFormat: Text.PlainText
                     font.family: Commons.Style.font.menuFamily; font.pixelSize: 11
                     color: root.configError ? Commons.Color.urgent : Commons.Util.alpha(Commons.Color.menu.text, 0.7)
                 }
+            }
+        }
+        Rectangle {
+            id: submenu
+            visible: root.opened && root.positioned && !!root.submenuTitle
+            readonly property var reserved: panel.monitorData.reserved || [0,0,0,0]
+            width: Math.min(Commons.Style.space(250), panel.width - reserved[0] - reserved[2] - 24)
+            height: Math.min(74 + Math.max(1, root.menuRows.length) * 46, panel.height - reserved[1] - reserved[3] - 24)
+            x: Math.max(reserved[0] + 12, Math.min(wheel.x + wheel.width/2 - width/2, panel.width - reserved[2] - width - 12))
+            y: Math.max(reserved[1] + 12, Math.min(wheel.y + wheel.height/2 - height/2, panel.height - reserved[3] - height - 12))
+            radius: Math.max(10, Commons.Style.cornerRadius)
+            color: Commons.Color.menu.background
+            border.width: 1
+            border.color: Commons.Util.alpha(Commons.Color.menu.text, 0.25)
+            MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onClicked: {} }
+            PointerMoveGate { id: menuMoveGate; referenceItem: submenu }
+            Rectangle {
+                x: 10; y: 10; width: 36; height: 36; radius: 8
+                color: backMouse.containsMouse ? Commons.Util.alpha(Commons.Color.accent, 0.15) : "transparent"
+                Text { anchors.centerIn: parent; text: "‹"; textFormat: Text.PlainText; font.pixelSize: 26; color: Commons.Color.menu.text }
+                MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.back() }
+            }
+            Text {
+                x: 54; y: 18; text: root.submenuTitle; textFormat: Text.PlainText
+                color: Commons.Color.menu.text; font.family: Commons.Style.font.menuFamily; font.pixelSize: 15; font.weight: Font.DemiBold
+            }
+            Rectangle { x: 14; y: 55; width: parent.width - 28; height: 1; color: Commons.Util.alpha(Commons.Color.menu.text, 0.12) }
+            ListView {
+                id: menuList
+                x: 8; y: 64; width: parent.width - 16; height: parent.height - 72
+                clip: true; boundsBehavior: Flickable.StopAtBounds
+                model: root.menuRows
+                delegate: Rectangle {
+                    required property int index
+                    required property var modelData
+                    width: menuList.width; height: 46; radius: 7
+                    color: root.selected === index ? Commons.Util.alpha(Commons.Color.accent, 0.15) : "transparent"
+                    border.width: root.selected === index && root.keyboardMode ? 1 : 0
+                    border.color: Commons.Color.accent
+                    LineIcon { x: 13; anchors.verticalCenter: parent.verticalCenter; width: 21; height: 21; name: modelData.icon; ink: root.selected === index ? Commons.Color.accent : Commons.Color.menu.text }
+                    Text {
+                        x: 46; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 75
+                        text: modelData.label; textFormat: Text.PlainText; elide: Text.ElideRight
+                        font.family: Commons.Style.font.menuFamily; font.pixelSize: 13
+                        color: root.selected === index ? Commons.Color.accent : Commons.Color.menu.text
+                    }
+                    Text { anchors.right: parent.right; anchors.rightMargin: 14; anchors.verticalCenter: parent.verticalCenter; text: "↗"; textFormat: Text.PlainText; color: Commons.Util.alpha(Commons.Color.menu.text, 0.5); font.pixelSize: 14 }
+                    MouseArea {
+                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onPositionChanged: mouse => { if (menuMoveGate.moved(this, mouse)) { root.keyboardMode = false; root.selected = index; } }
+                        onClicked: root.activate(index)
+                    }
+                }
+            }
+            Text {
+                visible: root.menuRows.length === 0
+                x: 20; y: 78; width: parent.width - 40
+                text: agents.running ? "Finding installed agents…" : root.agentError || "No supported agents installed"
+                textFormat: Text.PlainText; wrapMode: Text.WordWrap
+                color: Commons.Color.menu.text; font.family: Commons.Style.font.menuFamily; font.pixelSize: 12
             }
         }
     }

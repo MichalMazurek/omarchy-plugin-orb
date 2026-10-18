@@ -75,6 +75,10 @@ function layers() {
         if(index===1) {
           const angle=(index*60-90)*Math.PI/180;
           move(s.x+s.diameter/2+Math.cos(angle)*s.diameter*.33,s.y+s.diameter/2+Math.sin(angle)*s.diameter*.33,272);
+        } else if(index >= 4) {
+          key('5');key('Return');
+          assert.equal(status().submenu,'Settings');
+          key(String(index-3));key('Return');
         } else {key(String(index+1));key('Return');}
         await until(()=>!status().opened,'Wheel failed to dismiss after activation');
         const result=await until(()=>{
@@ -91,6 +95,20 @@ function layers() {
         await sleep(250);
       }
     }
+    move(960,560);s=await open();
+    assert.ok(s.diameter <= 330, 'Compact default is too large');
+    key('6');key('Return');
+    await until(()=>!status().loading && status().items.length, 'Installed agents did not load');
+    assert.equal(status().submenu,'Agents');
+    const expectedAgents=json(path.join(__dirname,'../scripts/agents')).map(a=>a.label);
+    assert.deepEqual(status().items,expectedAgents);
+    const submenu=status();
+    assert.ok(submenu.menuX>=12 && submenu.menuY>=42);
+    assert.ok(submenu.menuX+submenu.menuWidth<=1908 && submenu.menuY+submenu.menuHeight<=1188);
+    key('Down');assert.equal(status().selected,0);
+    key('Escape');assert.equal(status().submenu,'');assert.equal(status().opened,true);
+    key('Escape');assert.equal(status().opened,false);
+    pass('Compact wheel, installed-only agent list, submenu navigation and Back/Escape', {agents:expectedAgents});
     if(process.argv.includes('--theme')) {
       const home=process.env.HOME;
       const current=`${home}/.local/state/omarchy/current/theme`;
