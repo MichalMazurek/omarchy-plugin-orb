@@ -28,7 +28,7 @@ hl.bind("mouse:273", function()
   local background = false
   for _, layer in ipairs(hl.get_layers({ monitor = monitor })) do
     if layer.mapped and contains(p, layer.x, layer.y, layer.w, layer.h) then
-      if layer.layer == 0 and layer.namespace == "omarchy-background" then
+      if layer.layer == 0 then
         background = true
       else
         return pass
