@@ -148,8 +148,9 @@
     "visual": "Settings panel and glowing centre reviewed in real XPS still captures.",
     "scope": "Panel edits wheel size and opening animation; shows the current summon shortcut. Action editing and shortcut editing are not included in this small panel.",
     "notes": [
-      "Supersedes the brief configuration-editor implementation; centre activation no longer launches an editor.",
-      "An earlier exact-window-count assertion noticed an unrelated iOMARCHY boot-test terminal. It was identified and left untouched; the focused editor-window check passed.",
+      "Supersedes the configuration-editor implementation; centre activation now opens the hosted settings panel.",
+      "The first run passed Save, Cancel, reopening, restoration and all four screen-edge checks, then an exact-window-count assertion detected an unrelated iOMARCHY boot-test terminal. That terminal was identified and left untouched.",
+      "The repeat passed Save/Cancel/restoration, but a later screen-edge open timed out on the concurrently active desktop. A single uninterrupted full run is not claimed.",
       "Original size, animation, focused window and pointer restored after verification. No video recorded."
     ]
   }
