@@ -233,5 +233,17 @@
       "Native application/brand icons retain their original artwork and colours.",
       "Current chosen diameter restored; saved eight-slot layout preserved. No recording."
     ]
+  },
+  "icons_only_all_sizes": {
+    "input_commit": "feac1fa",
+    "date": "2026-10-18T20:20:36.080Z",
+    "report": [
+      "280px: icons only, full pointer/keyboard caption, circular submenu caption",
+      "303px: icons only, full pointer/keyboard caption, circular submenu caption"
+    ],
+    "visual": "303px still visually reviewed: centred icons, no sector labels, full Make something cool caption underneath.",
+    "notes": [
+      "Supersedes the 300px breakpoint. Original diameter restored."
+    ]
   }
 }
