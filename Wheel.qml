@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import Quickshell.Hyprland
@@ -294,13 +295,32 @@ Item {
                 width: parent.width * 0.32; height: width; radius: width / 2
                 color: root.submenuTitle && wheelMouse.atCentre ? Commons.Util.alpha(Commons.Color.accent, 0.15) : Commons.Color.menu.background
                 border.width: 1; border.color: Commons.Util.alpha(Commons.Color.menu.text, 0.18)
+                Image {
+                    id: omarchyMark
+                    anchors.centerIn: parent
+                    width: parent.width * 0.42; height: width
+                    source: Qt.resolvedUrl("assets/omarchy-logo.svg")
+                    sourceSize.width: Math.ceil(width * 2)
+                    sourceSize.height: Math.ceil(height * 2)
+                    fillMode: Image.PreserveAspectFit
+                    visible: false
+                    layer.enabled: true
+                }
+                MultiEffect {
+                    anchors.fill: omarchyMark
+                    source: omarchyMark
+                    visible: !root.submenuTitle
+                    colorization: 1.0
+                    colorizationColor: Commons.Color.menu.text
+                }
                 Column {
+                    visible: !!root.submenuTitle
                     anchors.centerIn: parent; spacing: 0
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: root.submenuTitle ? "‹" : "ORB"; textFormat: Text.PlainText
+                        text: "‹"; textFormat: Text.PlainText
                         font.family: Commons.Style.font.family
-                        font.pixelSize: root.submenuTitle ? 26 : Math.max(13, wheel.width * 0.042); font.letterSpacing: root.submenuTitle ? 0 : 3
+                        font.pixelSize: 26
                         color: Commons.Color.menu.text
                     }
                     Text {

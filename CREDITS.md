@@ -18,3 +18,7 @@ The unmodified SVG files in `assets/agents/` are copied from Omarchy’s agents 
 - Grok mark: xAI; white and dark variants. [Brand information](https://x.ai/legal/brand-guidelines).
 
 These marks identify the corresponding installed agent clients. They remain their owners’ trademarks and do not imply endorsement. They are not original Orb artwork. No assets are fetched at runtime.
+
+## Omarchy centre mark
+
+`assets/omarchy-logo.svg` is the unmodified official SVG downloaded from [Omarchy’s brand assets](https://omarchy.org/brand/omarchy-logo.svg) on 2026-10-18. The wheel renders it in the active menu text colour using Quattro’s existing Qt Quick colourization pattern. Omarchy branding belongs to its respective owners; its use identifies the desktop integration and does not imply endorsement.
