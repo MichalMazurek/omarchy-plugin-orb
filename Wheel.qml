@@ -30,6 +30,7 @@ Item {
     readonly property int pageCount: submenuTitle ? Math.max(1, Math.ceil(menuRows.length / 6)) : 1
     readonly property var wheelActions: submenuTitle ? menuRows.slice(menuPage * 6, menuPage * 6 + 6) : config.actions
     readonly property int selectionCount: wheelActions.length
+    readonly property bool iconsOnly: wheel.width < 300
     property string configError: ""
     property var pendingCommand: []
     property string pendingDesktopId: ""
@@ -173,6 +174,7 @@ Item {
     function status() {
         return JSON.stringify({ opened: opened, positioned: positioned, selected: selected,
             keyboard: keyboardMode, x: wheel.x, y: wheel.y, diameter: wheel.width,
+            iconsOnly: iconsOnly, selectionCaption: hint.text,
             hubActive: hubActive,
             settingsOpen: settingsOpen, settingsSaving: settingsSaving, settingsError: settingsError,
             settingsX: settingsCard.x, settingsY: settingsCard.y, settingsWidth: settingsCard.width, settingsHeight: settingsCard.height,
@@ -410,18 +412,19 @@ Item {
                     readonly property real angle: (index * 360 / root.selectionCount - 90) * Math.PI / 180
                     readonly property bool chosen: root.selected === index
                     width: wheel.width * (root.selectionCount > 6 ? 0.24 : 0.28)
-                    height: wheel.width * 0.16
+                    height: root.iconsOnly ? Math.max(24, wheel.width * 0.09) : wheel.width * 0.16
                     x: wheel.width/2 + Math.cos(angle) * wheel.width * 0.33 - width/2
                     y: wheel.height/2 + Math.sin(angle) * wheel.width * 0.33 - height/2
                     ActionIcon {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        y: 0; width: Math.max(22, wheel.width * 0.072); height: width
+                        y: 0; width: root.iconsOnly ? parent.height : Math.max(22, wheel.width * 0.072); height: width
                         name: modelData.icon
                         appSource: root.appIconSource(modelData)
                         selected: parent.chosen
                         ink: Commons.Color.menu.text
                     }
                     Text {
+                        visible: !root.iconsOnly
                         anchors.horizontalCenter: parent.horizontalCenter
                         y: Math.max(29, wheel.width * 0.10)
                         width: parent.width; horizontalAlignment: Text.AlignHCenter
@@ -522,13 +525,15 @@ Item {
                     width: parent.width - (root.pageCount > 1 ? 64 : 20)
                     horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
                     text: root.configError ? "Config error · using last valid actions"
+                        : root.selected >= 0 && root.selected < root.selectionCount ? root.wheelActions[root.selected].label
                         : !root.submenuTitle && root.hubActive ? "Orb settings · click to open"
+                        : root.submenuTitle && root.hubActive ? "Back to main wheel"
                         : root.submenuTitle && !root.selectionCount ? (agents.running ? "Finding installed agents…" : root.agentError || "No supported agents installed")
                         : root.pageCount > 1 ? "Page " + (root.menuPage + 1) + " / " + root.pageCount
                         : root.submenuTitle ? "Centre to go back · Enter to launch" : "Select · click or Enter"
                     textFormat: Text.PlainText
                     font.family: Commons.Style.font.menuFamily; font.pixelSize: 11
-                    color: root.configError ? Commons.Color.urgent : Commons.Util.alpha(Commons.Color.menu.text, 0.7)
+                    color: root.configError ? Commons.Color.urgent : root.selected >= 0 ? "#ffffff" : Commons.Util.alpha(Commons.Color.menu.text, 0.7)
                 }
                 Repeater {
                     model: root.pageCount > 1 ? 2 : 0
