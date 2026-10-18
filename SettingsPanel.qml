@@ -228,7 +228,10 @@ FocusScope {
                 id: search
                 width: parent.width; placeholderText: "Search apps and shortcuts…"; enabled: !panel.busy
                 onTextChanged: { panel.pickerCursor = 0; choiceList.positionViewAtBeginning(); }
-                onAccepted: panel.choose(panel.pickerCursor)
+                // Consume Enter before TextField's accepted signal can bubble
+                // the same key into the newly focused slot-list navigation.
+                Keys.onReturnPressed: event => { panel.choose(panel.pickerCursor); event.accepted = true; }
+                Keys.onEnterPressed: event => { panel.choose(panel.pickerCursor); event.accepted = true; }
                 Keys.onDownPressed: panel.movePicker(1)
                 Keys.onUpPressed: panel.movePicker(-1)
                 Keys.onEscapePressed: panel.backToSlots()
