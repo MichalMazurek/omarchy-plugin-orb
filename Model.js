@@ -1,8 +1,12 @@
 // Pure geometry and validation, shared by the hosted QML and Node tests.
-var icons = ["browser", "terminal", "files", "screenshot", "themes", "plugins", "agents", "settings", "codex", "claude", "grok"];
+var icons = ["browser", "terminal", "files", "screenshot", "themes", "plugins", "agents", "settings", "codex", "claude", "grok", "postcard", "app"];
 function action(a, depth) {
     if (!a || typeof a.label !== "string" || !a.label.trim() || a.label.length > 20 || icons.indexOf(a.icon) < 0) return null;
     var out = { label: a.label.trim(), icon: a.icon };
+    if (a.desktopId !== undefined) {
+        if (typeof a.desktopId !== "string" || !/^[A-Za-z0-9_.@+-]{1,255}$/.test(a.desktopId) || a.command || a.menu || a.children) return null;
+        out.desktopId = a.desktopId; return out;
+    }
     if (a.menu === "agents" && depth === 0 && !a.command && !a.children) { out.menu = "agents"; return out; }
     if (Array.isArray(a.children) && depth === 0 && !a.command && !a.menu && a.children.length > 0 && a.children.length <= 12) {
         out.children = a.children.map(function(c) { return action(c, 1); });
@@ -11,6 +15,22 @@ function action(a, depth) {
     if (a.children || a.menu || !Array.isArray(a.command) || a.command.length < 1 || a.command.length > 32
         || a.command.some(function(s) { return typeof s !== "string" || s.length > 4096 || s.indexOf("\u0000") >= 0; }) || !a.command[0]) return null;
     out.command = a.command.slice(); return out;
+}
+// Merge only edited fields/slots into the latest document. Preserve custom fields
+// and concurrent edits elsewhere; refuse to overwrite a conflicting slot.
+function mergeSettings(document, original, draft) {
+    var result = JSON.parse(JSON.stringify(document));
+    var current = parse(JSON.stringify(document), null);
+    if (current.error) return { error: current.error };
+    for (var i = 0; i < 6; i++) {
+        if (JSON.stringify(original.actions[i]) === JSON.stringify(draft.actions[i])) continue;
+        if (JSON.stringify(current.config.actions[i]) !== JSON.stringify(original.actions[i]) && JSON.stringify(current.config.actions[i]) !== JSON.stringify(draft.actions[i]))
+            return { error: "Slot " + (i + 1) + " changed elsewhere. Reopen settings to load it." };
+        result.actions[i] = draft.actions[i];
+    }
+    ["diameter", "animation"].forEach(function(key) { if (original[key] !== draft[key]) result[key] = draft[key]; });
+    var checked = parse(JSON.stringify(result), null);
+    return checked.error ? { error: checked.error } : { document: result, error: "" };
 }
 function parse(raw, fallback) {
     var value;
@@ -46,4 +66,4 @@ function placement(px, py, width, height, reserved, preferred) {
         x: Math.max(left, Math.min(px - size / 2, left + availableW - size)),
         y: Math.max(top, Math.min(py - size / 2, top + availableH - size - footer)) };
 }
-if (typeof module !== "undefined") module.exports = { parse: parse, hit: hit, placement: placement };
+if (typeof module !== "undefined") module.exports = { parse: parse, hit: hit, placement: placement, mergeSettings: mergeSettings };

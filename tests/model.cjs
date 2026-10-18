@@ -54,3 +54,34 @@ for (const [w,h] of [[1920,1200],[1280,800],[800,600]]) {
   }
 }
 console.log('PASS: six sectors, dead zone, config validation, all edges and reserved bounds');
+
+const app = {label:'Files',icon:'app',desktopId:'org.gnome.Nautilus'};
+const base = JSON.parse(fs.readFileSync(`${__dirname}/../config.example.json`, 'utf8'));
+const clone = value => JSON.parse(JSON.stringify(value));
+const original = model.parse(JSON.stringify(base), null).config;
+const draft = clone(original); draft.actions[3] = app;
+const current = clone(base); current.shortcut = 'SUPER + ALT + P'; current.actions[0].extra = 'keep';
+current.actions[2].label = 'Documents'; current.diameter = 300;
+const merged = model.mergeSettings(current, original, draft);
+assert.equal(merged.error, ''); assert.deepEqual(merged.document.actions[3], app);
+assert.equal(merged.document.actions[2].label, 'Documents');
+assert.equal(merged.document.actions[0].extra, 'keep');
+assert.equal(merged.document.diameter, 300); assert.equal(merged.document.shortcut, current.shortcut);
+current.actions[3].label = 'Capture elsewhere';
+assert.match(model.mergeSettings(current, original, draft).error, /Slot 4 changed elsewhere/);
+for (const bad of ['../escape', '/usr/bin/app', 'bad\napp', '', 'x'.repeat(256)]) {
+    const invalid = clone(base); invalid.actions[3] = {...app, desktopId:bad};
+    assert.ok(model.parse(JSON.stringify(invalid), null).error);
+}
+for (const extra of [{command:['true']}, {menu:'agents'}, {children:[app]}]) {
+    const invalid = clone(base); invalid.actions[3] = {...app,...extra};
+    assert.ok(model.parse(JSON.stringify(invalid), null).error);
+}
+const allowed = clone(base); allowed.actions[3] = app;
+assert.deepEqual(model.parse(JSON.stringify(allowed), null).config.actions[3], app);
+const postcard = {label:'Postcard', icon:'postcard', command:['omarchy-shell','shell','summon','tahayvr.postcard','{}']};
+for (let i=0;i<6;i++) {
+    const allSlots=clone(original); allSlots.actions[i]=postcard;
+    assert.deepEqual(model.mergeSettings(base, original, allSlots).document.actions[i], postcard);
+}
+console.log('PASS: every slot editable, app IDs validated, untouched settings preserved, concurrent slot conflicts rejected');

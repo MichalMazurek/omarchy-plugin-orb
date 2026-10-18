@@ -13,7 +13,7 @@ const move=(x,y,b=0)=>run(repo+'/artifacts/input/pointer',Math.round(x),Math.rou
 const config=process.env.HOME+'/.config/omarchy/orb.json';const originalText=fs.readFileSync(config,'utf8');const original=JSON.parse(originalText);
 const beforeWindows=json('hyprctl','clients','-j').map(w=>w.address);let expectedSaved=null;
 const report=[];const pass=name=>{report.push(name);console.log('PASS:',name);};
-async function openSettings(x=960,y=560){move(x,y);ipc('shell','summon',id,'{}');await until(()=>status().opened&&status().opacity===1);await sleep(180);let s=status();move(s.x+s.diameter/2,s.y+s.diameter/2,272);await until(()=>status().settingsOpen,'Centre failed to open panel');await sleep(100);return status();}
+async function openSettings(x=960,y=560){move(x,y);ipc('shell','summon',id,'{}');await until(()=>status().opened&&status().opacity===1);await sleep(180);let s=status();move(s.x+s.diameter/2,s.y+s.diameter/2,272);await until(()=>status().settingsOpen,'Centre failed to open panel');await sleep(100);key('Up');key('Return');assert.equal(status().settingsTab,1);return status();}
 function capture(s){run('grim','-g',`${Math.floor(s.settingsX-8)},${Math.floor(s.settingsY-8)} ${Math.ceil(s.settingsWidth+16)}x${Math.ceil(s.settingsHeight+16)}`,repo+'/artifacts/orb-settings-panel.png');}
 (async()=>{try{
 let s=await openSettings();capture(s);assert.equal(s.draftDiameter,original.diameter);

@@ -26,6 +26,10 @@ Canvas {
         } else if (name === "screenshot") {
             line([8,3,3,3,3,8]); line([16,3,21,3,21,8]);
             line([3,16,3,21,8,21]); line([21,16,21,21,16,21]); c.strokeRect(7,7,10,10);
+        } else if (name === "postcard") {
+            c.strokeRect(2.5,4,19,16); circle(16,8,1.5); line([3,17,8,10,13,16,16,13,21,18]);
+        } else if (name === "app") {
+            c.strokeRect(3,3,7,7); c.strokeRect(14,3,7,7); c.strokeRect(3,14,7,7); c.strokeRect(14,14,7,7);
         } else if (name === "themes") {
             circle(12,12,9); circle(8,9,1); circle(13,7,1); circle(17,11,1);
             line([6,17,11,12,16,17]);

@@ -4,6 +4,7 @@ import qs.Commons as Commons
 Item {
     id: icon
     property string name: "browser"
+    property url appSource: ""
     property color ink: Commons.Color.menu.text
     readonly property bool branded: name === "codex" || name === "claude" || name === "grok"
     readonly property color surface: Commons.Color.menu.background
@@ -15,8 +16,8 @@ Item {
     Image {
         id: mark
         anchors.fill: parent
-        visible: icon.branded && status === Image.Ready
-        source: icon.branded ? Qt.resolvedUrl("assets/agents/" + icon.name
+        visible: (icon.branded || icon.appSource.toString() !== "") && status === Image.Ready
+        source: icon.appSource.toString() !== "" ? icon.appSource : icon.branded ? Qt.resolvedUrl("assets/agents/" + icon.name
             + (icon.lightSurface && icon.name !== "claude" ? "-light" : "") + ".svg") : ""
         sourceSize.width: Math.ceil(width * 2)
         sourceSize.height: Math.ceil(height * 2)
@@ -24,7 +25,7 @@ Item {
     }
     LineIcon {
         anchors.fill: parent
-        visible: !icon.branded || mark.status === Image.Error
+        visible: !mark.visible
         name: icon.branded ? "agents" : icon.name
         ink: icon.ink
     }

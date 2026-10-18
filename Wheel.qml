@@ -32,6 +32,9 @@ Item {
     readonly property int selectionCount: wheelActions.length
     property string configError: ""
     property var pendingCommand: []
+    property string pendingDesktopId: ""
+    readonly property var appLibrary: shell ? shell.appLibrary : null
+    property int appRevision: 0
     property string lastAction: ""
     property bool settingsOpen: false
     property bool settingsSaving: false
@@ -46,7 +49,7 @@ Item {
     function open(payloadJson) {
         // Payloads deliberately cannot change commands or configuration paths.
         try { JSON.parse(payloadJson || "{}"); } catch (error) {}
-        launchDelay.stop(); pendingCommand = [];
+        launchDelay.stop(); pendingCommand = []; pendingDesktopId = "";
         if (settingsReloadPending) settingsSaving = false;
         settingsOpen = false; settingsReloadPending = false;
         selected = -1; keyboardMode = false; positioned = false;
@@ -60,7 +63,7 @@ Item {
         opened = false; positioned = false; selected = -1;
         if (settingsReloadPending) settingsSaving = false;
         settingsOpen = false; settingsReloadPending = false;
-        cursor.running = false; launchDelay.stop(); pendingCommand = [];
+        cursor.running = false; launchDelay.stop(); pendingCommand = []; pendingDesktopId = "";
         agents.running = false; submenuTitle = ""; agentMenu = false;
     }
     function dismiss() {
@@ -94,14 +97,50 @@ Item {
             if (agentMenu) { agentError = ""; installedAgents = []; agents.running = true; }
             return;
         }
-        launchAction(action.command.slice(), action.label);
+        if (action.desktopId) {
+            if (!appLibrary) return;
+            lastAction = action.label; dismiss();
+            pendingDesktopId = action.desktopId; launchDelay.start();
+        } else launchAction(action.command.slice(), action.label);
+    }
+    function appIconSource(action) {
+        var revision = appRevision;
+        if (!action.desktopId || !appLibrary) return "";
+        var rows = appLibrary.sortedEntries("");
+        for (var i = 0; i < rows.length; i++) {
+            var entry = rows[i].entry;
+            if (entry && String(entry.id) === action.desktopId) return appLibrary.iconSource(String(entry.icon || ""));
+        }
+        return "";
+    }
+    function settingsChoices() {
+        var choices = [];
+        var builtins = Model.parse(defaults.text(), config).config.actions;
+        builtins = builtins.concat(builtins[4].children || []);
+        builtins.splice(4, 0, { label: "Postcard", icon: "postcard", command: ["omarchy-shell", "shell", "summon", "tahayvr.postcard", "{}"] });
+        builtins.forEach(function(action) {
+            choices.push({ title: action.label, detail: action.menu || action.children ? "Circular submenu" : action.icon === "postcard" ? "Postcard plugin · open editor" : "Omarchy shortcut", action: action });
+        });
+        if (appLibrary) {
+            var rows = appLibrary.sortedEntries("");
+            rows.forEach(function(row) {
+                var entry = row.entry;
+                if (!entry || !/^[A-Za-z0-9_.@+-]{1,255}$/.test(String(entry.id || ""))) return;
+                var title = appLibrary.entryName(entry);
+                if (!title) return;
+                choices.push({ title: title, detail: "App · " + (appLibrary.entrySubtext(entry) || entry.id),
+                    iconSource: appLibrary.iconSource(String(entry.icon || "")),
+                    action: { label: title.slice(0, 20), icon: "app", desktopId: String(entry.id) } });
+            });
+        }
+        return choices;
     }
     function activateHub() {
         if (!opened) return;
         if (submenuTitle) back();
         else {
             settingsError = "";
-            settingsCard.begin(config.diameter, config.animation);
+            settingsCard.begin(config, settingsChoices());
             settingsOpen = true;
             Qt.callLater(function() { settingsCard.forceActiveFocus(); });
         }
@@ -116,8 +155,7 @@ Item {
         if (settingsSaving) return;
         settingsError = "";
         settingsSaving = true; settingsReloadPending = true;
-        // Re-read before merging so saving appearance preserves current actions,
-        // the shortcut and any other settings edited while the panel was open.
+        // Re-read before merging so unrelated and concurrent edits survive.
         userConfig.reload();
     }
     function launchAction(command, label) {
@@ -133,6 +171,8 @@ Item {
             settingsOpen: settingsOpen, settingsSaving: settingsSaving, settingsError: settingsError,
             settingsX: settingsCard.x, settingsY: settingsCard.y, settingsWidth: settingsCard.width, settingsHeight: settingsCard.height,
             draftDiameter: settingsCard.diameter, draftAnimation: settingsCard.animation,
+            draftActions: settingsCard.actions, settingsTab: settingsCard.tab, editingSlot: settingsCard.editingSlot,
+            pickerItems: settingsCard.editingSlot >= 0 ? settingsCard.filteredChoices.map(function(c) { return c.title; }) : [],
             screen: panel.targetScreen ? panel.targetScreen.name : "", error: configError,
             foreground: String(Commons.Color.menu.text), background: String(Commons.Color.menu.background),
             lastAction: lastAction, ready: panel.contentReady, revealed: panel.contentRevealed,
@@ -167,9 +207,11 @@ Item {
                     return;
                 }
                 var document = JSON.parse(text());
-                document.diameter = settingsCard.diameter;
-                document.animation = settingsCard.animation;
-                root.settingsSaveText = JSON.stringify(document, null, 2) + "\n";
+                var merged = Model.mergeSettings(document, settingsCard.original, settingsCard.draft());
+                if (merged.error) {
+                    root.settingsSaving = false; root.settingsError = merged.error; return;
+                }
+                root.settingsSaveText = JSON.stringify(merged.document, null, 2) + "\n";
                 settingsWriter.setText(root.settingsSaveText);
             }
         }
@@ -225,10 +267,19 @@ Item {
         id: launchDelay
         interval: 120
         onTriggered: {
+            if (root.pendingDesktopId) {
+                var desktopId = root.pendingDesktopId; root.pendingDesktopId = "";
+                if (root.appLibrary) root.appLibrary.launch(desktopId, root.lastAction);
+                return;
+            }
             var args = [Qt.resolvedUrl("scripts/launch").toString().replace(/^file:\/\//, ""), root.lastAction].concat(root.pendingCommand);
             root.pendingCommand = [];
             Quickshell.execDetached(args);
         }
+    }
+    Connections {
+        target: root.appLibrary
+        function onAppsChanged() { root.appRevision++; }
     }
     Process {
         id: agents
@@ -355,6 +406,7 @@ Item {
                         anchors.horizontalCenter: parent.horizontalCenter
                         y: 0; width: Math.max(22, wheel.width * 0.072); height: width
                         name: modelData.icon
+                        appSource: root.appIconSource(modelData)
                         ink: parent.chosen ? Commons.Color.accent : Commons.Color.menu.text
                     }
                     Text {
@@ -485,6 +537,7 @@ Item {
             x: Math.max(reserved[0] + 12, Math.min(wheel.x + wheel.width / 2 - width / 2, panel.width - reserved[2] - width - 12))
             y: Math.max(reserved[1] + 12, Math.min(wheel.y + wheel.height / 2 - height / 2, panel.height - reserved[3] - height - 12))
             shortcut: root.shortcut
+            appLibrary: root.appLibrary
             busy: root.settingsSaving
             error: root.settingsError
             onSaveRequested: root.saveSettings()
