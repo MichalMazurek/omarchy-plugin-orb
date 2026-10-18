@@ -119,5 +119,19 @@
       "No repeat of all launcher actions for this visual-only change; previous launch acceptance remains recorded above.",
       "Quattro required a shell restart to clear cached QML before the live check."
     ]
+  },
+  "omarchy_hub_update": {
+    "input_commit": "dea1c13",
+    "date": "2026-10-18T18:10:01.442Z",
+    "checks": [
+      "./tests/native passed",
+      "Official SVG fetched from https://omarchy.org/brand/omarchy-logo.svg",
+      "Live stills visually inspected on dark and Catppuccin Latte palettes",
+      "Submenu centre returns to root; root logo centre dismisses",
+      "Original palette, pointer and focused window restored; no video recorded"
+    ],
+    "limitations": [
+      "Focused visual and centre-navigation check only; prior broader action acceptance remains above."
+    ]
   }
 }
