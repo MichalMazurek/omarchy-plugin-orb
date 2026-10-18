@@ -33,6 +33,12 @@ Item {
     property string configError: ""
     property var pendingCommand: []
     property string lastAction: ""
+    property bool settingsOpen: false
+    property bool settingsSaving: false
+    property bool settingsReloadPending: false
+    property string settingsSaveText: ""
+    property string settingsError: ""
+    property string shortcut: "SUPER + ALT + O"
     readonly property bool hubActive: keyboardMode ? selected === -2 : wheelMouse.atCentre
     readonly property string pluginId: "io.github.tcballard.orb"
     readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/omarchy/orb.json"
@@ -41,6 +47,8 @@ Item {
         // Payloads deliberately cannot change commands or configuration paths.
         try { JSON.parse(payloadJson || "{}"); } catch (error) {}
         launchDelay.stop(); pendingCommand = [];
+        if (settingsReloadPending) settingsSaving = false;
+        settingsOpen = false; settingsReloadPending = false;
         selected = -1; keyboardMode = false; positioned = false;
         submenuTitle = ""; agentMenu = false; parentSelection = -1;
         installedAgents = []; agentError = ""; menuPage = 0;
@@ -50,6 +58,8 @@ Item {
     }
     function close() {
         opened = false; positioned = false; selected = -1;
+        if (settingsReloadPending) settingsSaving = false;
+        settingsOpen = false; settingsReloadPending = false;
         cursor.running = false; launchDelay.stop(); pendingCommand = [];
         agents.running = false; submenuTitle = ""; agentMenu = false;
     }
@@ -89,7 +99,26 @@ Item {
     function activateHub() {
         if (!opened) return;
         if (submenuTitle) back();
-        else launchAction(["omarchy", "launch", "config-editor", configPath], "Orb settings");
+        else {
+            settingsError = "";
+            settingsCard.begin(config.diameter, config.animation);
+            settingsOpen = true;
+            Qt.callLater(function() { settingsCard.forceActiveFocus(); });
+        }
+    }
+    function cancelSettings() {
+        if (settingsReloadPending) settingsSaving = false;
+        settingsOpen = false; settingsReloadPending = false;
+        selected = -2; keyboardMode = true; moveGate.reset();
+        keys.forceActiveFocus();
+    }
+    function saveSettings() {
+        if (settingsSaving) return;
+        settingsError = "";
+        settingsSaving = true; settingsReloadPending = true;
+        // Re-read before merging so saving appearance preserves current actions,
+        // the shortcut and any other settings edited while the panel was open.
+        userConfig.reload();
     }
     function launchAction(command, label) {
         lastAction = label;
@@ -101,6 +130,9 @@ Item {
         return JSON.stringify({ opened: opened, positioned: positioned, selected: selected,
             keyboard: keyboardMode, x: wheel.x, y: wheel.y, diameter: wheel.width,
             hubActive: hubActive,
+            settingsOpen: settingsOpen, settingsSaving: settingsSaving, settingsError: settingsError,
+            settingsX: settingsCard.x, settingsY: settingsCard.y, settingsWidth: settingsCard.width, settingsHeight: settingsCard.height,
+            draftDiameter: settingsCard.diameter, draftAnimation: settingsCard.animation,
             screen: panel.targetScreen ? panel.targetScreen.name : "", error: configError,
             foreground: String(Commons.Color.menu.text), background: String(Commons.Color.menu.background),
             lastAction: lastAction, ready: panel.contentReady, revealed: panel.contentRevealed,
@@ -126,6 +158,42 @@ Item {
         onLoaded: {
             var parsed = Model.parse(text(), root.config);
             root.config = parsed.config; root.configError = parsed.error;
+            if (!parsed.error) root.shortcut = JSON.parse(text()).shortcut || "SUPER + ALT + O";
+            if (root.settingsReloadPending) {
+                root.settingsReloadPending = false;
+                if (parsed.error) {
+                    root.settingsSaving = false;
+                    root.settingsError = "Could not read your settings. Nothing was saved.";
+                    return;
+                }
+                var document = JSON.parse(text());
+                document.diameter = settingsCard.diameter;
+                document.animation = settingsCard.animation;
+                root.settingsSaveText = JSON.stringify(document, null, 2) + "\n";
+                settingsWriter.setText(root.settingsSaveText);
+            }
+        }
+        onLoadFailed: {
+            if (root.settingsReloadPending) {
+                root.settingsReloadPending = false; root.settingsSaving = false;
+                root.settingsError = "Could not read your settings. Nothing was saved.";
+            }
+        }
+    }
+    FileView {
+        id: settingsWriter
+        path: root.configPath
+        preload: false
+        blockLoading: true
+        atomicWrites: true
+        onSaved: {
+            root.settingsSaving = false;
+            root.config = Model.parse(root.settingsSaveText, root.config).config;
+            if (root.opened && root.settingsOpen) root.cancelSettings();
+        }
+        onSaveFailed: {
+            root.settingsSaving = false;
+            root.settingsError = "Could not save. Your changes are still here.";
         }
     }
     Process {
@@ -224,7 +292,7 @@ Item {
             y: panel.placement.y
             width: panel.placement.size
             height: width
-            visible: root.positioned
+            visible: root.positioned && !root.settingsOpen
             opacity: root.opened && root.positioned && panel.contentRevealed ? 1 : 0
             scale: opacity > 0 ? 1 : 0.92
             Behavior on opacity { NumberAnimation { duration: root.config.animation ? Commons.Style.duration(150) : 0 } }
@@ -389,7 +457,7 @@ Item {
                     width: parent.width - (root.pageCount > 1 ? 64 : 20)
                     horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
                     text: root.configError ? "Config error · using last valid actions"
-                        : !root.submenuTitle && root.hubActive ? "Orb settings · click to edit"
+                        : !root.submenuTitle && root.hubActive ? "Orb settings · click to open"
                         : root.submenuTitle && !root.selectionCount ? (agents.running ? "Finding installed agents…" : root.agentError || "No supported agents installed")
                         : root.pageCount > 1 ? "Page " + (root.menuPage + 1) + " / " + root.pageCount
                         : root.submenuTitle ? "Centre to go back · Enter to launch" : "Select · click or Enter"
@@ -408,6 +476,19 @@ Item {
                     }
                 }
             }
+        }
+        SettingsPanel {
+            id: settingsCard
+            visible: root.opened && root.positioned && root.settingsOpen
+            readonly property var reserved: panel.monitorData.reserved || [0, 0, 0, 0]
+            width: Math.min(Commons.Style.space(300), panel.width - reserved[0] - reserved[2] - 24)
+            x: Math.max(reserved[0] + 12, Math.min(wheel.x + wheel.width / 2 - width / 2, panel.width - reserved[2] - width - 12))
+            y: Math.max(reserved[1] + 12, Math.min(wheel.y + wheel.height / 2 - height / 2, panel.height - reserved[3] - height - 12))
+            shortcut: root.shortcut
+            busy: root.settingsSaving
+            error: root.settingsError
+            onSaveRequested: root.saveSettings()
+            onCanceled: root.cancelSettings()
         }
     }
 }
