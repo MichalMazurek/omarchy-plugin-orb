@@ -226,7 +226,8 @@ FocusScope {
             width: parent.width; spacing: Commons.Style.space(8)
             TextField {
                 id: search
-                width: parent.width; placeholderText: "Search apps and shortcuts…"; enabled: !panel.busy
+                width: parent.width; placeholderText: "Search Apps, Plugins, or Shortcuts…"; enabled: !panel.busy
+                font.pixelSize: Commons.Style.space(11)
                 onTextChanged: { panel.pickerCursor = 0; choiceList.positionViewAtBeginning(); }
                 // Consume Enter before TextField's accepted signal can bubble
                 // the same key into the newly focused slot-list navigation.
