@@ -15,3 +15,5 @@ The repository starts from the user's starter `0605227`; `.template/blueprint` i
 Deferred: deeper nesting, visual editing, hold/release gestures, physical multi-monitor acceptance, release and marketplace publication.
 
 The compact wheel defaults to 240 theme units. Submenus reuse the same circular geometry, position and diameter; their centre button returns to the main wheel. More than six submenu actions are paged using footer arrows, scrolling or Page Up/Down. Escape/Left/Backspace returns to the wheel; outside click closes the entire interaction. `scripts/agents` performs one read-only mise inventory query plus executable checks, excluding auto-install stubs. `scripts/agent` launches an installed client in Omarchy’s agent terminal with the selected account, without changing the default agent or submitting a prompt.
+
+The main hub uses a theme-accent glow on hover or Home-key selection. Activation unmaps Orb before `omarchy launch config-editor` opens its own `orb.json` in the user’s default editor. Submenu hubs still navigate back.

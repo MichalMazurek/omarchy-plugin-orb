@@ -28,8 +28,8 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 
 ## Use and configure
 
-- Hover a sector and left-click to launch. Clicking the centre goes back in a submenu or cancels at the top level.
-- Arrow keys or Tab/Shift+Tab cycle; 1–6 select; Enter launches.
+- Hover a sector and left-click to launch. The centre logo glows on hover; click it to open Orb’s configuration in your default editor. In a submenu, the centre goes back.
+- Arrow keys or Tab/Shift+Tab cycle; 1–6 select; Enter launches. Home selects the centre button; Enter opens Orb settings (or goes back in a submenu).
 - Escape/Left/Backspace or the centre button returns from a submenu. Escape on the wheel, outside click, or the summon shortcut again dismisses.
 - The wheel and keyboard hint stay clear of monitor edges and reserved bar space.
 - Submenus with more than six actions use footer arrows, scrolling or Page Up/Down.

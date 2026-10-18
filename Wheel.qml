@@ -33,6 +33,7 @@ Item {
     property string configError: ""
     property var pendingCommand: []
     property string lastAction: ""
+    readonly property bool hubActive: keyboardMode ? selected === -2 : wheelMouse.atCentre
     readonly property string pluginId: "io.github.tcballard.orb"
     readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/omarchy/orb.json"
 
@@ -72,6 +73,7 @@ Item {
         selected = parentSelection; keyboardMode = true; moveGate.reset();
     }
     function activate(index) {
+        if (opened && index === -2) { activateHub(); return; }
         if (!opened || index < 0 || index >= selectionCount) return;
         var action = wheelActions[index];
         if (action.menu || action.children) {
@@ -82,7 +84,15 @@ Item {
             if (agentMenu) { agentError = ""; installedAgents = []; agents.running = true; }
             return;
         }
-        var command = action.command.slice(); lastAction = action.label;
+        launchAction(action.command.slice(), action.label);
+    }
+    function activateHub() {
+        if (!opened) return;
+        if (submenuTitle) back();
+        else launchAction(["omarchy", "launch", "config-editor", configPath], "Orb settings");
+    }
+    function launchAction(command, label) {
+        lastAction = label;
         dismiss();
         // Let the compositor unmap the exclusive layer before a new UI or screenshot.
         pendingCommand = command; launchDelay.start();
@@ -90,6 +100,7 @@ Item {
     function status() {
         return JSON.stringify({ opened: opened, positioned: positioned, selected: selected,
             keyboard: keyboardMode, x: wheel.x, y: wheel.y, diameter: wheel.width,
+            hubActive: hubActive,
             screen: panel.targetScreen ? panel.targetScreen.name : "", error: configError,
             foreground: String(Commons.Color.menu.text), background: String(Commons.Color.menu.background),
             lastAction: lastAction, ready: panel.contentReady, revealed: panel.contentRevealed,
@@ -195,6 +206,7 @@ Item {
             focus: root.opened
             Keys.onPressed: event => {
                 if (event.key === Qt.Key_Escape || event.key === Qt.Key_Backspace || (root.submenuTitle && event.key === Qt.Key_Left)) root.back();
+                else if (event.key === Qt.Key_Home) { root.keyboardMode = true; root.selected = -2; moveGate.reset(); }
                 else if (event.key === Qt.Key_PageDown) root.turnPage(1);
                 else if (event.key === Qt.Key_PageUp) root.turnPage(-1);
                 else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) root.activate(root.selected);
@@ -293,8 +305,11 @@ Item {
             Rectangle {
                 anchors.centerIn: parent
                 width: parent.width * 0.32; height: width; radius: width / 2
-                color: root.submenuTitle && wheelMouse.atCentre ? Commons.Util.alpha(Commons.Color.accent, 0.15) : Commons.Color.menu.background
-                border.width: 1; border.color: Commons.Util.alpha(Commons.Color.menu.text, 0.18)
+                color: root.hubActive ? Commons.Util.alpha(Commons.Color.accent, 0.15) : Commons.Color.menu.background
+                border.width: 1
+                border.color: root.hubActive ? Commons.Color.accent : Commons.Util.alpha(Commons.Color.menu.text, 0.18)
+                Behavior on color { ColorAnimation { duration: root.config.animation ? Commons.Style.duration(140) : 0 } }
+                Behavior on border.color { ColorAnimation { duration: root.config.animation ? Commons.Style.duration(140) : 0 } }
                 Image {
                     id: omarchyMark
                     anchors.centerIn: parent
@@ -311,7 +326,14 @@ Item {
                     source: omarchyMark
                     visible: !root.submenuTitle
                     colorization: 1.0
-                    colorizationColor: Commons.Color.menu.text
+                    colorizationColor: root.hubActive ? Commons.Color.accent : Commons.Color.menu.text
+                    shadowEnabled: true
+                    shadowColor: Commons.Color.accent
+                    shadowBlur: 0.65
+                    shadowHorizontalOffset: 0
+                    shadowVerticalOffset: 0
+                    shadowOpacity: root.hubActive ? 0.85 : 0
+                    Behavior on shadowOpacity { NumberAnimation { duration: root.config.animation ? Commons.Style.duration(140) : 0 } }
                 }
                 Column {
                     visible: !!root.submenuTitle
@@ -341,7 +363,7 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 acceptedButtons: Qt.AllButtons
-                cursorShape: (root.selected >= 0 && !root.keyboardMode) || (root.submenuTitle && atCentre) ? Qt.PointingHandCursor : Qt.ArrowCursor
+                cursorShape: (root.selected >= 0 && !root.keyboardMode) || atCentre ? Qt.PointingHandCursor : Qt.ArrowCursor
                 onPositionChanged: mouse => {
                     if (!moveGate.moved(this, mouse)) return;
                     root.keyboardMode = false;
@@ -351,8 +373,7 @@ Item {
                 onClicked: mouse => {
                     var i = Model.hit(mouse.x, mouse.y, width, root.selectionCount);
                     if (mouse.button === Qt.LeftButton && i >= 0) root.activate(i);
-                    else if (mouse.button === Qt.LeftButton && root.submenuTitle
-                        && Math.hypot(mouse.x - width/2, mouse.y - height/2) < width * 0.18) root.back();
+                    else if (mouse.button === Qt.LeftButton && atCentre) root.activateHub();
                     else root.dismiss();
                 }
                 onWheel: event => { root.turnPage(event.angleDelta.y < 0 ? 1 : -1); event.accepted = true; }
@@ -368,6 +389,7 @@ Item {
                     width: parent.width - (root.pageCount > 1 ? 64 : 20)
                     horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
                     text: root.configError ? "Config error · using last valid actions"
+                        : !root.submenuTitle && root.hubActive ? "Orb settings · click to edit"
                         : root.submenuTitle && !root.selectionCount ? (agents.running ? "Finding installed agents…" : root.agentError || "No supported agents installed")
                         : root.pageCount > 1 ? "Page " + (root.menuPage + 1) + " / " + root.pageCount
                         : root.submenuTitle ? "Centre to go back · Enter to launch" : "Select · click or Enter"
