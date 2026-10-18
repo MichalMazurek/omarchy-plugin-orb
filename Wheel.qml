@@ -270,7 +270,7 @@ Item {
                     height: wheel.width * 0.16
                     x: wheel.width/2 + Math.cos(angle) * wheel.width * 0.33 - width/2
                     y: wheel.height/2 + Math.sin(angle) * wheel.width * 0.33 - height/2
-                    LineIcon {
+                    ActionIcon {
                         anchors.horizontalCenter: parent.horizontalCenter
                         y: 0; width: Math.max(22, wheel.width * 0.072); height: width
                         name: modelData.icon

@@ -117,6 +117,21 @@ function layers() {
     assert.equal(status().submenu,'Agents');
     const expectedAgents=json(path.join(__dirname,'../scripts/agents')).map(a=>a.label);
     assert.deepEqual(status().items,expectedAgents);
+    if(process.argv.includes('--glyphs')) {
+      const capture = name => { const v=status(); run('grim','-g',`${Math.floor(v.x-10)},${Math.floor(v.y-10)} ${Math.ceil(v.diameter+20)}x${Math.ceil(v.diameter+58)}`,`${artifacts}/orb-agents-${name}.png`); };
+      await sleep(250);capture('marks-dark');
+      const current=path.join(process.env.HOME,'.local/state/omarchy/current/theme');
+      themeRestoration=[fs.readFileSync(`${current}/colors.toml`).toString('base64'),fs.readFileSync(`${current}/shell.toml`).toString('base64')];
+      const old=status().background;
+      ipc('shell','applyTheme',fs.readFileSync(`${process.env.OMARCHY_PATH}/themes/catppuccin-latte/colors.toml`).toString('base64'),'');
+      await until(()=>status().background!==old,'Light palette did not apply');
+      key('2');await sleep(250);capture('marks-light');
+      ipc('shell','applyTheme',...themeRestoration);themeRestoration=null;
+      await until(()=>status().background===old,'Original palette did not restore');
+      pass('Agent glyph stills captured on original and light palettes; original palette restored');
+      key('Escape');key('6');key('Return');
+      await until(()=>!status().loading&&status().items.length,'Agents did not reload');
+    }
     const submenu=status();
     assert.ok(submenu.menuX>=12 && submenu.menuY>=42);
     assert.ok(submenu.menuX+submenu.menuWidth<=1908 && submenu.menuY+submenu.menuHeight<=1188);

@@ -4,7 +4,7 @@
 
 <p align="center"><a href="https://github.com/tcballard/omarchy-badges"><img alt="Built for Omarchy: Plugin" height="20" src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg"></a></p>
 
-**Interaction inspiration: Tangerine for Mac.** Orb is an original implementation for Omarchy, with original icons and QML; it contains no Tangerine code or assets. Built from Tom Ballard's Omarchy plugin starter and [Build Omarchy Plugins](https://github.com/tcballard/build-omarchy-plugins). [Credits](CREDITS.md).
+**Interaction inspiration: Tangerine for Mac.** Orb is an original implementation for Omarchy, with original QML and general-purpose icons; it contains no Tangerine code or assets. Built from Tom Ballard's Omarchy plugin starter and [Build Omarchy Plugins](https://github.com/tcballard/build-omarchy-plugins). [Credits](CREDITS.md).
 
 Press **Super+Alt+O**, hover an action, and click. The compact wheel opens Browser, Terminal, Files and Screenshot directly. **Settings → Themes / Plugins** and **Agents → installed clients** open circular submenus in the same wheel. Launches use existing Omarchy terminal and application launchers. Orb runs inside Quattro's existing shell, with its active colours, font sizing and reduced-motion setting.
 
@@ -50,6 +50,8 @@ Remove from the source checkout with `./uninstall`. It removes this plugin and i
 Developed on a Dell XPS 9320, 1920×1200 at scale 1, Omarchy dev `5f7aaeb8c`. [Acceptance evidence](docs/ACCEPTANCE.json) separates portable checks from direct desktop tests. [Development](docs/DEVELOPMENT.md) · [Architecture](ARCHITECTURE.md) · [Demo and recording](docs/DEMO.md).
 
 Six top-level entries with one submenu level; no visual editor. Agent discovery filters out first-run installer wrappers, requires a real installed executable, and does not alter the default agent. Multiple physical monitors, hotplug and fractional scaling need further live testing. Screenshot verification covers opening and cancelling the capture UI, not saving a capture. Theme verification uses real shell palette-change IPC and restores it; full desktop/app retinting is not exercised. Physical shortcut presses need a human check; automation uses the registered dispatcher and real Wayland input.
+
+Codex, Claude and Grok use the product marks bundled with Omarchy’s agents panel, with contrasting variants for light and dark themes. [Asset provenance](CREDITS.md#agent-marks).
 
 No release or marketplace listing has been published.
 

@@ -27,7 +27,9 @@ while IFS='|' read -r executable label tool; do
   if [[ ${1:-} == --resolve && ${2:-} != "$executable" ]]; then continue; fi
   if binary=$(resolve "$executable" "$tool"); then
     if [[ ${1:-} == --resolve ]]; then printf '%s\n' "$binary"; exit 0; fi
-    rows+=("$(jq -cn --arg label "$label" --arg helper "$script_dir/agent" --arg id "$executable" '{label:$label,icon:"agents",command:["omarchy","launch","tui","--app-id=org.omarchy.agent",$helper,$id]}')")
+    icon=agents
+    case "$executable" in claude|codex|grok) icon=$executable ;; esac
+    rows+=("$(jq -cn --arg label "$label" --arg icon "$icon" --arg helper "$script_dir/agent" --arg id "$executable" '{label:$label,icon:$icon,command:["omarchy","launch","tui","--app-id=org.omarchy.agent",$helper,$id]}')")
   fi
 done <<'CATALOG'
 claude|Claude Code|claude
