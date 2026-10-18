@@ -1,5 +1,5 @@
 // Pure geometry and validation, shared by the hosted QML and Node tests.
-var icons = ["browser", "terminal", "files", "screenshot", "themes", "plugins", "agents", "settings", "codex", "claude", "grok", "postcard", "app"];
+var icons = ["browser", "terminal", "files", "screenshot", "themes", "plugins", "agents", "settings", "codex", "claude", "grok", "postcard", "app", "create"];
 function action(a, depth) {
     if (!a || typeof a.label !== "string" || !a.label.trim() || a.label.length > 20 || icons.indexOf(a.icon) < 0) return null;
     var out = { label: a.label.trim(), icon: a.icon };

@@ -262,8 +262,8 @@ FocusScope {
                 onTextChanged: { panel.pickerCursor = 0; choiceList.positionViewAtBeginning(); }
                 // Consume Enter before TextField's accepted signal can bubble
                 // the same key into the newly focused slot-list navigation.
-                Keys.onReturnPressed: event => { panel.choose(panel.pickerCursor); event.accepted = true; }
-                Keys.onEnterPressed: event => { panel.choose(panel.pickerCursor); event.accepted = true; }
+                Keys.onReturnPressed: event => { event.accepted = true; Qt.callLater(function() { panel.choose(panel.pickerCursor); }); }
+                Keys.onEnterPressed: event => { event.accepted = true; Qt.callLater(function() { panel.choose(panel.pickerCursor); }); }
                 Keys.onDownPressed: panel.movePicker(1)
                 Keys.onUpPressed: panel.movePicker(-1)
                 Keys.onEscapePressed: panel.backToSlots()

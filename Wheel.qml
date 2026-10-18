@@ -119,6 +119,11 @@ Item {
         var builtins = Model.parse(defaults.text(), config).config.actions;
         builtins = builtins.concat(builtins[4].children || []);
         builtins.splice(4, 0, { label: "Postcard", icon: "postcard", command: ["omarchy-shell", "shell", "summon", "tahayvr.postcard", "{}"] });
+        builtins.push({ label: "Make something cool", icon: "create", children: [
+            { label: "New theme", icon: "themes", command: ["omarchy", "agent", "prompt", "Make me a new Omarchy theme. Ask me what look or inspiration I have in mind, then build it following the Omarchy skill's theming guide and switch to it."] },
+            { label: "New plugin", icon: "plugins", command: ["omarchy", "agent", "prompt", "Make me a new Omarchy shell plugin. Ask me what I'd like it to do, then build it following the Omarchy skill's plugin guide and enable it."] },
+            { label: "New app", icon: "app", command: ["omarchy", "agent", "prompt", "Make me a new app for my Omarchy desktop. Ask me what it should do, then build it following the omarchy-app skill and install it so it shows up in the app launcher."] }
+        ] });
         builtins.forEach(function(action) {
             choices.push({ title: action.label, detail: action.menu || action.children ? "Circular submenu" : action.icon === "postcard" ? "Postcard plugin · open editor" : "Omarchy shortcut", action: action });
         });

@@ -28,6 +28,9 @@ Canvas {
             line([3,16,3,21,8,21]); line([21,16,21,21,16,21]); c.strokeRect(7,7,10,10);
         } else if (name === "postcard") {
             c.strokeRect(2.5,4,19,16); circle(16,8,1.5); line([3,17,8,10,13,16,16,13,21,18]);
+        } else if (name === "create") {
+            line([10,3,12,9,18,11,12,13,10,19,8,13,2,11,8,9,10,3]);
+            line([19,2,20,5,23,6,20,7,19,10,18,7,15,6,18,5,19,2]);
         } else if (name === "app") {
             c.strokeRect(3,3,7,7); c.strokeRect(14,3,7,7); c.strokeRect(3,14,7,7); c.strokeRect(14,14,7,7);
         } else if (name === "themes") {
