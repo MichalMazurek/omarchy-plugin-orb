@@ -33,6 +33,7 @@ Item {
     property string configError: ""
     property var pendingCommand: []
     property string pendingDesktopId: ""
+    property string lastDispatch: ""
     readonly property var appLibrary: shell ? shell.appLibrary : null
     property int appRevision: 0
     property string lastAction: ""
@@ -175,7 +176,8 @@ Item {
             pickerItems: settingsCard.editingSlot >= 0 ? settingsCard.filteredChoices.map(function(c) { return c.title; }) : [],
             screen: panel.targetScreen ? panel.targetScreen.name : "", error: configError,
             foreground: String(Commons.Color.menu.text), background: String(Commons.Color.menu.background),
-            lastAction: lastAction, ready: panel.contentReady, revealed: panel.contentRevealed,
+            lastAction: lastAction, lastDispatch: lastDispatch, pendingDesktopId: pendingDesktopId, launchPending: launchDelay.running,
+            ready: panel.contentReady, revealed: panel.contentRevealed,
             opacity: wheel.opacity, visible: wheel.visible, windowWidth: panel.width, windowHeight: panel.height,
             scale: panel.devicePixelRatio, monitorScale: panel.targetMonitor ? panel.targetMonitor.scale : 0,
             submenu: submenuTitle, items: menuRows.map(function(a) { return a.label; }), loading: agents.running,
@@ -269,10 +271,12 @@ Item {
         onTriggered: {
             if (root.pendingDesktopId) {
                 var desktopId = root.pendingDesktopId; root.pendingDesktopId = "";
+                root.lastDispatch = "app:" + desktopId;
                 if (root.appLibrary) root.appLibrary.launch(desktopId, root.lastAction);
                 return;
             }
             var args = [Qt.resolvedUrl("scripts/launch").toString().replace(/^file:\/\//, ""), root.lastAction].concat(root.pendingCommand);
+            root.lastDispatch = "command:" + root.lastAction;
             root.pendingCommand = [];
             Quickshell.execDetached(args);
         }
