@@ -17,7 +17,7 @@ Item {
     property int selected: -1
     property bool keyboardMode: false
     property point pointer: Qt.point(0, 0)
-    property var config: ({ actions: [], diameter: 280, animation: true })
+    property var config: ({ actions: [], diameter: 240, animation: true })
     property string submenuTitle: ""
     property bool agentMenu: false
     property var submenuRows: []

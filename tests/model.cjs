@@ -4,7 +4,7 @@ const model = require('../Model.js');
 const defaults = model.parse(fs.readFileSync(`${__dirname}/../config.example.json`, 'utf8'), null);
 assert.equal(defaults.error, '');
 assert.equal(defaults.config.actions.length, 6);
-assert.equal(defaults.config.diameter, 280);
+assert.equal(defaults.config.diameter, 240);
 assert.equal(defaults.config.actions[5].menu, 'agents');
 assert.equal(defaults.config.actions[4].children[1].label, 'Plugins');
 const tooDeep = JSON.parse(fs.readFileSync(`${__dirname}/../config.example.json`, 'utf8'));

@@ -24,7 +24,7 @@ function parse(raw, fallback) {
             return { config: fallback, error: "Invalid action " + (i + 1) + "; using the last valid configuration." };
         actions.push(a);
     }
-    return { config: { actions: actions, diameter: Math.max(240, Math.min(600, Number(value.diameter) || 280)), animation: value.animation !== false }, error: "" };
+    return { config: { actions: actions, diameter: Math.max(220, Math.min(600, Number(value.diameter) || 240)), animation: value.animation !== false }, error: "" };
 }
 function hit(x, y, diameter) {
     var dx = x - diameter / 2, dy = y - diameter / 2;

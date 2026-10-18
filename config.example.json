@@ -1,6 +1,6 @@
 {
   "shortcut": "SUPER + ALT + O",
-  "diameter": 280,
+  "diameter": 240,
   "animation": true,
   "actions": [
     { "label": "Browser", "icon": "browser", "command": ["omarchy", "launch", "browser"] },
