@@ -1,1 +1,8 @@
 * text=auto eol=lf
+.template/ export-ignore
+.github/ export-ignore
+tests/ export-ignore
+demo/ export-ignore
+scripts/init.mjs export-ignore
+scripts/template.mjs export-ignore
+scripts/github.mjs export-ignore

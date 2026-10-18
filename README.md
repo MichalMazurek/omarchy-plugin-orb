@@ -1,35 +1,56 @@
-<h1 align="center">Omarchy Plugin Starter</h1>
+<h1 align="center">Orb</h1>
 
-<p align="center">A small Quattro bar widget to extend into your own plugin.</p>
+<p align="center">Six everyday shortcuts, one pointer-centred wheel.</p>
 
 <p align="center"><a href="https://github.com/tcballard/omarchy-badges"><img alt="Built for Omarchy: Plugin" height="20" src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg"></a></p>
 
-Development starter for Omarchy projects. Initialize it once, then replace the example with your product.
+**Interaction inspiration: Tangerine for Mac.** Orb is an original implementation for Omarchy, with original icons and QML; it contains no Tangerine code or assets. Built from Tom Ballard's Omarchy plugin starter and [Build Omarchy Plugins](https://github.com/tcballard/build-omarchy-plugins). [Credits](CREDITS.md).
 
-Original starter; no external product inspiration has been declared. Add prominent credit here when adapting an existing project.
+Press **Super+Alt+O**, hover an action, and click. Browser, Terminal, Files, Screenshot, Themes and Plugins use existing Omarchy launchers. Orb runs inside Quattro's existing shell, with its active colours, font sizing and reduced-motion setting.
 
-**Start here:** [Create and initialize your repository](docs/SETUP.md).
+## Install the prototype
 
-**Preview:** a real on-device screenshot is pending. No screenshot or desktop acceptance is claimed.
-
-## Development
-
-Run the portable checks from the repository root:
+From this checkout, one command:
 
 ```bash
-./tests/run
+./install
 ```
 
-[Build, run and remove](docs/DEVELOPMENT.md) · [Architecture](ARCHITECTURE.md) · [Release process](docs/RELEASE.md)
+Or clone the feature branch first:
 
-## Compatibility
+```bash
+git clone --branch feature/shortcut-wheel https://github.com/tcballard/omarchy-plugin-orb.git && cd omarchy-plugin-orb && ./install
+```
 
-Intended target: Omarchy 4 / Hyprland. Exact installed Omarchy versions tested: **none yet**.
-Portable validation covers structure and metadata; it does not establish live desktop compatibility. Record actual tests in [acceptance evidence](docs/ACCEPTANCE.json).
+The installer uses `omarchy plugin add "$PWD" --enable --yes`, a normal Git-based plugin installation. It checks live keybindings before adding the shortcut, backs up the affected Lua files, and preserves unrelated settings. No sudo, package installation or shell restart. The installed checkout tracks this local source repository; commit changes and rerun `./install` to update it. Main remains the starter until this branch is merged.
 
-## Credits
+Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the normal Omarchy launchers, Bash, Git, jq and libnotify. Node and a compiler are only development dependencies.
 
-Built from [Build Omarchy Plugins](https://github.com/tcballard/build-omarchy-plugins) guidance and the Omarchy template set. [Sources, inspiration and assets](CREDITS.md).
+## Use and configure
+
+- Hover a sector and left-click to launch. Clicking the neutral centre cancels.
+- Arrow keys or Tab/Shift+Tab cycle; 1–6 select; Enter launches.
+- Escape, outside click, or the summon shortcut again dismisses.
+- The wheel and keyboard hint stay clear of monitor edges and reserved bar space.
+- Opening animates for 190ms; system reduced motion is respected.
+
+Edit `~/.config/omarchy/orb.json` for six labels, built-in icon names, command argument arrays, diameter, animation and shortcut. See [the example](config.example.json). Commands run without shell-string evaluation. Other changes load live; **rerun `./install` after changing the shortcut**. Invalid configuration retains the last valid actions and shows an error hint.
+
+```bash
+omarchy-shell shell toggle io.github.tcballard.orb
+omarchy-shell shell hide io.github.tcballard.orb
+omarchy-shell io.github.tcballard.orb status
+```
+
+Remove from the source checkout with `./uninstall`. It removes this plugin and its shortcut, preserving `orb.json` and source. Removing through Omarchy alone leaves the separately installed shortcut; use the script for complete removal.
+
+## Verification and limits
+
+Developed on a Dell XPS 9320, 1920×1200 at scale 1, Omarchy dev `5f7aaeb8c`. [Acceptance evidence](docs/ACCEPTANCE.json) separates portable checks from direct desktop tests. [Development](docs/DEVELOPMENT.md) · [Architecture](ARCHITECTURE.md) · [Demo and recording](docs/DEMO.md).
+
+Six actions, no nested menus or visual editor. Multiple physical monitors, hotplug and fractional scaling need further live testing. Screenshot verification covers opening and cancelling the capture UI, not saving a capture. Theme verification uses real shell palette-change IPC and restores it; full desktop/app retinting is not exercised. Physical shortcut presses need a human check; automation uses the registered dispatcher and real Wayland input.
+
+No release or marketplace listing has been published.
 
 ## Licence
 

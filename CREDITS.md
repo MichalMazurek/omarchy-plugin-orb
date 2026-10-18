@@ -1,11 +1,10 @@
 # Credits and provenance
 
-Original starter; no external product inspiration has been declared. Add prominent credit here when adapting an existing project.
+**Interaction inspiration: Tangerine for Mac**, as specified by the user. Orb's QML implementation and vector icons are original. No Tangerine code, artwork or branding is included.
 
-Template authorship: Tom Ballard, 2026, MIT. Preserve this attribution when adapting the starter.
-Project author: Tom Ballard.
+Template authorship: Tom Ballard, 2026, MIT. Project author: Tom Ballard.
+- Plugin conventions: [Build Omarchy Plugins](https://github.com/tcballard/build-omarchy-plugins).
+- Community badge: [omarchy-badges](https://github.com/tcballard/omarchy-badges), pinned to 75975e5b5bf75e7ede3764bcd2950046f7abfe2c.
+- Test-only virtual pointer protocol: copyright 2019 Josef Gajdusek, MIT. Full licence remains in tests/virtual-pointer.xml. [Upstream protocol](https://gitlab.freedesktop.org/wlroots/wlr-protocols/-/blob/master/unstable/wlr-virtual-pointer-unstable-v1.xml).
 
-- plugin conventions: [build-omarchy-plugins](https://github.com/tcballard/build-omarchy-plugins).
-- Community badge artwork: [omarchy-badges](https://github.com/tcballard/omarchy-badges), pinned to 75975e5b5bf75e7ede3764bcd2950046f7abfe2c. No badge artwork is bundled.
-
-No third-party wallpapers, screenshots or product logos are bundled. Record source URLs, creator, licence and redistribution permission for any added assets. Crediting an inspiration does not grant permission to copy its code or artwork.
+No third-party wallpapers, screenshots or product logos are bundled. Local demo captures can contain the user's wallpaper and are not published with the source.

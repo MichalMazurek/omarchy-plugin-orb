@@ -3,3 +3,5 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 node scripts/check.mjs
 node --test tests/*.test.mjs
+node tests/model.cjs
+bash -n install uninstall scripts/launch tests/native tests/build-pointer

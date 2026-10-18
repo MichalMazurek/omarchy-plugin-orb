@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+cd -- "$(dirname -- "$0")/.."
+mkdir -p artifacts/input
+wayland-scanner client-header tests/virtual-pointer.xml artifacts/input/pointer.h
+wayland-scanner private-code tests/virtual-pointer.xml artifacts/input/pointer-protocol.c
+cc -Wall -Wextra -Wno-unused-parameter -Iartifacts/input tests/pointer.c artifacts/input/pointer-protocol.c -o artifacts/input/pointer $(pkg-config --cflags --libs wayland-client)
+echo 'Built artifacts/input/pointer (test-only virtual input tool)'

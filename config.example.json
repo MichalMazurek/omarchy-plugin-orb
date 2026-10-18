@@ -1,0 +1,13 @@
+{
+  "shortcut": "SUPER + ALT + O",
+  "diameter": 440,
+  "animation": true,
+  "actions": [
+    { "label": "Browser", "icon": "browser", "command": ["omarchy", "launch", "browser"] },
+    { "label": "Terminal", "icon": "terminal", "command": ["omarchy", "launch", "terminal"] },
+    { "label": "Files", "icon": "files", "command": ["omarchy", "launch", "nautilus"] },
+    { "label": "Screenshot", "icon": "screenshot", "command": ["omarchy", "capture", "screenshot"] },
+    { "label": "Themes", "icon": "themes", "command": ["omarchy-shell", "shell", "summon", "omarchy.image-picker", "{\"source\":\"themes\"}"] },
+    { "label": "Plugins", "icon": "plugins", "command": ["omarchy", "menu", "summon", "setup.plugin"] }
+  ]
+}

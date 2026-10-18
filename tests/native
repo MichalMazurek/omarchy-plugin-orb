@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+cd -- "$(dirname -- "$0")/.."
+./tests/run
+omarchy plugin validate .
+for file in Wheel.qml LineIcon.qml; do
+  /usr/lib/qt6/bin/qmlformat -n "$file" >/dev/null
+done
+echo 'PASS: installed manifest validator and Qt QML parser'

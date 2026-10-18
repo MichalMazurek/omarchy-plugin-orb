@@ -1,0 +1,77 @@
+#!/bin/bash
+# One-command local repository installation; no package or system files changed.
+set -euo pipefail
+cd -- "$(dirname -- "$(readlink -f -- "$0")")"
+repo=$PWD
+id=io.github.tcballard.orb
+for cmd in git jq omarchy omarchy-shell hyprctl; do
+  command -v "$cmd" >/dev/null || { echo "Missing dependency: $cmd" >&2; exit 1; }
+done
+config_dir=${XDG_CONFIG_HOME:-$HOME/.config}
+config="$config_dir/omarchy/orb.json"
+source_config=$config
+[[ -f $source_config ]] || source_config="$repo/config.example.json"
+shortcut=$(jq -er '.shortcut' "$source_config")
+IFS='+' read -ra parts <<< "$shortcut"
+mask=0
+key=""
+canonical=""
+for part in "${parts[@]}"; do
+  part=${part//[[:space:]]/}
+  part=${part^^}
+  [[ -z $key ]] || { echo 'The key must be the final shortcut token.' >&2; exit 1; }
+  case "$part" in
+    SUPER) bit=64 ;;
+    ALT) bit=8 ;;
+    CTRL) bit=4 ;;
+    SHIFT) bit=1 ;;
+    *) [[ $part =~ ^([A-Z0-9]|F[1-9]|F1[0-2]|SPACE)$ ]] || { echo "Unsupported shortcut token: $part" >&2; exit 1; }; key=$part; bit=0 ;;
+  esac
+  if (( bit )); then
+    (( (mask & bit) == 0 )) || { echo 'Duplicate shortcut modifier.' >&2; exit 1; }
+    mask=$((mask | bit))
+  fi
+  canonical+="${canonical:+ + }$part"
+done
+[[ -n $key && $mask -ge 64 ]] || { echo 'Use a Super shortcut with one key.' >&2; exit 1; }
+binds=$(hyprctl binds -j)
+conflicts=$(jq --arg key "$key" --argjson mask "$mask" '[.[] | select((.key | ascii_upcase) == $key and .modmask == $mask and .description != "Orb shortcut wheel")] | length' <<< "$binds")
+(( conflicts == 0 )) || { echo "Shortcut $canonical is already bound; choose another in $config." >&2; exit 1; }
+[[ -z $(hyprctl configerrors) ]] || { echo 'Resolve existing Hyprland config errors before installing.' >&2; exit 1; }
+omarchy plugin validate "$repo"
+target="$HOME/.config/omarchy/plugins/$id"
+if [[ ! -e $target ]]; then
+  omarchy plugin add "$repo" --enable --yes
+elif [[ -d $target/.git && $(git -C "$target" remote get-url origin) == "$repo" ]]; then
+  git -C "$target" pull --ff-only
+  omarchy-shell shell rescanPlugins >/dev/null
+  omarchy plugin enable "$id"
+else
+  echo "Refusing to replace an unrelated installation: $target" >&2
+  exit 1
+fi
+mkdir -p "$config_dir/omarchy" "$config_dir/hypr"
+[[ -f $config ]] || cp -- "$repo/config.example.json" "$config"
+bindings="$config_dir/hypr/bindings.lua"
+module="$config_dir/hypr/orb.lua"
+if [[ -e $module ]] && ! head -1 "$module" | grep -Fxq -- '-- Orb shortcut wheel: managed by omarchy-plugin-orb/install'; then
+  echo "Refusing to overwrite $module" >&2; exit 1
+fi
+backup=$(mktemp -d "$config_dir/hypr/.orb-backup.XXXXXXXX")
+[[ ! -e $bindings ]] || cp -p -- "$bindings" "$backup/bindings.lua"
+[[ ! -e $module ]] || cp -p -- "$module" "$backup/orb.lua"
+printf '%s\n' '-- Orb shortcut wheel: managed by omarchy-plugin-orb/install' "o.bind(\"$canonical\", \"Orb shortcut wheel\", { panel = \"$id\" })" > "$module"
+touch "$bindings"
+if ! grep -Fxq 'require("orb") -- Orb shortcut wheel' "$bindings"; then
+  printf '\n%s\n' 'require("orb") -- Orb shortcut wheel' >> "$bindings"
+fi
+hyprctl reload >/dev/null
+errors=$(hyprctl configerrors)
+if [[ -n $errors ]]; then
+  [[ ! -e $backup/bindings.lua ]] || cp -p "$backup/bindings.lua" "$bindings"
+  [[ ! -e $backup/orb.lua ]] || cp -p "$backup/orb.lua" "$module"
+  hyprctl reload >/dev/null
+  printf 'Shortcut installation failed: %s\nBackup: %s\n' "$errors" "$backup" >&2
+  exit 1
+fi
+printf 'Orb installed. Summon: %s\nConfig: %s\nShortcut backup: %s\n' "$canonical" "$config" "$backup"
