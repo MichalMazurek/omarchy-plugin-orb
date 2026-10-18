@@ -174,6 +174,7 @@ Item {
         return JSON.stringify({ opened: opened, positioned: positioned, selected: selected,
             keyboard: keyboardMode, x: wheel.x, y: wheel.y, diameter: wheel.width,
             iconsOnly: true, selectionCaption: hint.text,
+            captionFontSize: hint.font.pixelSize, footerHeight: panel.placement.footer,
             hubActive: hubActive,
             settingsOpen: settingsOpen, settingsSaving: settingsSaving, settingsError: settingsError,
             settingsX: settingsCard.x, settingsY: settingsCard.y, settingsWidth: settingsCard.width, settingsHeight: settingsCard.height,
@@ -353,6 +354,7 @@ Item {
             y: panel.placement.y
             width: panel.placement.size
             height: width
+            readonly property real captionScale: panel.placement.captionScale
             visible: root.positioned && !root.settingsOpen
             opacity: root.opened && root.positioned && panel.contentRevealed ? 1 : 0
             scale: opacity > 0 ? 1 : 0.92
@@ -489,14 +491,15 @@ Item {
                 onWheel: event => { root.turnPage(event.angleDelta.y < 0 ? 1 : -1); event.accepted = true; }
             }
             Rectangle {
-                anchors.top: parent.bottom; anchors.topMargin: 8
+                anchors.top: parent.bottom; anchors.topMargin: 8 * wheel.captionScale
                 anchors.horizontalCenter: parent.horizontalCenter
-                width: Math.min(wheel.width, hint.implicitWidth + (root.pageCount > 1 ? 72 : 24)); height: 28; radius: 14
+                width: Math.min(wheel.width, hint.implicitWidth + (root.pageCount > 1 ? 72 : 24) * wheel.captionScale)
+                height: 28 * wheel.captionScale; radius: height / 2
                 color: Commons.Color.menu.background
                 border.width: 1; border.color: Commons.Util.alpha(Commons.Color.menu.text, 0.16)
                 Text {
                     id: hint; anchors.centerIn: parent
-                    width: parent.width - (root.pageCount > 1 ? 64 : 20)
+                    width: parent.width - (root.pageCount > 1 ? 64 : 20) * wheel.captionScale
                     horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
                     text: root.configError ? "Config error · using last valid actions"
                         : root.selected >= 0 && root.selected < root.selectionCount ? root.wheelActions[root.selected].label
@@ -506,7 +509,7 @@ Item {
                         : root.pageCount > 1 ? "Page " + (root.menuPage + 1) + " / " + root.pageCount
                         : root.submenuTitle ? "Centre to go back · Enter to launch" : "Select · click or Enter"
                     textFormat: Text.PlainText
-                    font.family: Commons.Style.font.menuFamily; font.pixelSize: 11
+                    font.family: Commons.Style.font.menuFamily; font.pixelSize: Math.round(11 * wheel.captionScale)
                     color: root.configError ? Commons.Color.urgent : root.selected >= 0 ? "#ffffff" : Commons.Util.alpha(Commons.Color.menu.text, 0.7)
                 }
                 Repeater {
@@ -514,8 +517,8 @@ Item {
                     delegate: Item {
                         required property int index
                         x: index === 0 ? 0 : parent.width - width
-                        width: 32; height: parent.height
-                        Text { anchors.centerIn: parent; text: index === 0 ? "‹" : "›"; font.pixelSize: 22; color: Commons.Color.menu.text }
+                        width: 32 * wheel.captionScale; height: parent.height
+                        Text { anchors.centerIn: parent; text: index === 0 ? "‹" : "›"; font.pixelSize: Math.round(22 * wheel.captionScale); color: Commons.Color.menu.text }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.turnPage(index === 0 ? -1 : 1) }
                     }
                 }

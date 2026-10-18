@@ -76,7 +76,10 @@ function placement(px, py, width, height, reserved, preferred) {
     var availableW = Math.max(1, width - r[0] - r[2] - pad * 2);
     var availableH = Math.max(1, height - r[1] - r[3] - pad * 2);
     var size = Math.max(1, Math.min(preferred, availableW, availableH - footer));
-    return { size: size,
+    if (size > 280) size = Math.min(size, availableH / (1 + footer / 280));
+    var captionScale = Math.max(1, size / 280);
+    footer *= captionScale;
+    return { size: size, captionScale: captionScale, footer: footer,
         x: Math.max(left, Math.min(px - size / 2, left + availableW - size)),
         y: Math.max(top, Math.min(py - size / 2, top + availableH - size - footer)) };
 }

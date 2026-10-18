@@ -46,10 +46,12 @@ for (const count of [0,1,2,3,4,5,6]) {
 for (const [w,h] of [[1920,1200],[1280,800],[800,600]]) {
   for (const reserved of [[0,30,0,0],[55,0,0,0],[0,0,60,45]]) {
     for (const [x,y] of [[0,0],[w,0],[0,h],[w,h],[-100,-100],[w/2,h/2]]) {
-      const p = model.placement(x,y,w,h,reserved,440);
+      for (const preferred of [240, 440, 700]) {
+      const p = model.placement(x,y,w,h,reserved,preferred);
       assert.ok(p.x >= reserved[0]); assert.ok(p.y >= reserved[1]);
       assert.ok(p.x+p.size <= w-reserved[2]);
-      assert.ok(p.y+p.size+38 <= h-reserved[3]);
+      assert.ok(p.y+p.size+p.footer <= h-reserved[3]);
+      }
     }
   }
 }
