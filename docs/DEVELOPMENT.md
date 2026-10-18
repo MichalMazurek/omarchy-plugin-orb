@@ -32,3 +32,9 @@ Run `node tests/settings-live.cjs` for the native settings panel. It changes siz
 Run `node tests/slots-live.cjs` for all six slot drafts, cancellation, an installed Files app save/launch, Postcard save/reopen/launch, and panel bounds. It restores the configuration it started with; `--apply-postcard` deliberately retains Postcard in slot four on success. Keep the desktop idle during this input-driven check. It captures stills only. The older full-action harness assumes the default six-slot layout; use focused checks when you have customized it.
 
 `./tests/native` also uses Lua to check desktop hit-testing and passthrough. `node tests/rightclick-live.cjs` checks real desktop right-click, left-click, the retained Super+right-click resize binding, and a Files context menu in a temporary workspace, then restores workspace/focus/pointer. Native binding contract: https://wiki.hypr.land/configuring/core/binds/#auto-consuming-binds-and-return--ok--false- .
+
+`node tests/expanded-slots-live.cjs` starts with a six-slot configuration, verifies cancel/add/save/reopen for seven and eight slots, all eight pointer hit regions, the eighth action launch, and removal back to six. It restores the starting configuration and captures stills only.
+
+`node tests/extras-live.cjs` checks a saved layout containing Make something cool: all pointer sectors, last-slot keyboard selection, its circular submenu and back navigation, and removal/Cancel without saving. It compares the starter prompts against the installed Agents panel and deliberately does not execute them.
+
+`node tests/compact-live.cjs` checks 280px and 303px layouts on this XPS, pointer/keyboard captions and submenu captions, then restores the original diameter without overwriting slot changes.

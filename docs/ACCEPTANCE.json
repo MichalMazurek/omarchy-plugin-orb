@@ -202,5 +202,36 @@
       "Desktop right-click replaces the wallpaper right-double-click theme gesture; application context menus and Super+right-click resize remain",
       "Workspace, focus and pointer restored; only the test Files window closed"
     ]
+  },
+  "expanded_slots_and_starters": {
+    "input_commit": "905aa2a",
+    "date": "2026-10-18T20:05:23.111Z",
+    "report": [
+      "All saved slots select by pointer; number key selects the eighth slot",
+      "Make something cool opens a circular three-action submenu; Escape returns to the full wheel",
+      "Remove edits the draft; Cancel preserves your saved eight-slot layout",
+      "All three starter prompts exactly match the installed Omarchy Agents panel; no prompt executed"
+    ],
+    "automated": [
+      "Native/QML checks passed; model tests cover 6–8 slots, add/remove merges, metadata preservation and concurrent structural changes"
+    ],
+    "visual": "Eight-slot and Make something cool submenu stills captured. Compact layout verification supersedes in-sector label readability below 300px.",
+    "limitations": [
+      "Initial six-slot add/save live harness was interrupted by focus/shell reloads and then the user saved an eight-slot layout; no uninterrupted add/save/remove end-to-end pass claimed. The later non-mutating eight-slot, submenu and remove/cancel check passed.",
+      "Starter command arrays match current upstream prompts and launcher; no agent task executed during verification."
+    ]
+  },
+  "compact_layout": {
+    "input_commit": "29e3c46",
+    "date": "2026-10-18T20:09:21.410Z",
+    "report": [
+      "280px: icons only, full pointer/keyboard caption, circular submenu caption",
+      "303px: sector labels visible, full pointer/keyboard caption, circular submenu caption"
+    ],
+    "visual": "Both 280px icon-only and 303px labelled screenshots visually reviewed; full Make something cool caption is visible below the wheel.",
+    "notes": [
+      "Native application/brand icons retain their original artwork and colours.",
+      "Current chosen diameter restored; saved eight-slot layout preserved. No recording."
+    ]
   }
 }

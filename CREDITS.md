@@ -22,3 +22,7 @@ These marks identify the corresponding installed agent clients. They remain thei
 ## Omarchy centre mark
 
 `assets/omarchy-logo.svg` is the unmodified official SVG downloaded from [Omarchy’s brand assets](https://omarchy.org/brand/omarchy-logo.svg) on 2026-10-18. The wheel renders it in the active menu text colour using Quattro’s existing Qt Quick colourization pattern. Omarchy branding belongs to its respective owners; its use identifies the desktop integration and does not imply endorsement.
+
+## Make something cool
+
+The three theme/plugin/app starter prompts are reused from [Omarchy’s Agents panel](https://github.com/tcballard/omarchy/blob/301ea47016e28df527825cbd417e084fdd612405/shell/plugins/agents/Panel.qml), as installed locally when implemented. Omarchy’s MIT notice is retained in [assets/agents/LICENSE.omarchy](assets/agents/LICENSE.omarchy). Orb supplies its own circular presentation and calls the native `omarchy agent prompt` launcher.
