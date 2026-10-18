@@ -104,5 +104,20 @@
   "test_notes": [
     "The initial focused attempt detected stale rectangular QML. After shell restart, test input was paced to allow compositor focus delivery; focused and full runs passed.",
     "tests/live.cjs includes uncommitted-at-input-commit harness pacing improvements; application runtime matches input_commit."
-  ]
+  ],
+  "agent_marks_update": {
+    "input_commit": "29c3644",
+    "date": "2026-10-18T18:01:44.074Z",
+    "checks": [
+      "./tests/native passed, including ActionIcon.qml parsing",
+      "scripts/agents returned claude/codex/grok icon IDs for the three installed clients",
+      "Live --menus-only --glyphs passed: circular menu navigation, centre-back, Escape and focus restoration",
+      "Still images visually inspected on original dark palette and Catppuccin Latte: all three product marks present, Codex/Grok switch white to dark, Claude remains orange",
+      "Original palette restored; no video recorded"
+    ],
+    "limitations": [
+      "No repeat of all launcher actions for this visual-only change; previous launch acceptance remains recorded above.",
+      "Quattro required a shell restart to clear cached QML before the live check."
+    ]
+  }
 }
