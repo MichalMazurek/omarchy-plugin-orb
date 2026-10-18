@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import qs.Commons as Commons
 
 Item {
@@ -6,6 +7,7 @@ Item {
     property string name: "browser"
     property url appSource: ""
     property color ink: Commons.Color.menu.text
+    property bool selected: false
     readonly property bool branded: name === "codex" || name === "claude" || name === "grok"
     readonly property color surface: Commons.Color.menu.background
     function linear(channel) {
@@ -22,11 +24,13 @@ Item {
         sourceSize.width: Math.ceil(width * 2)
         sourceSize.height: Math.ceil(height * 2)
         fillMode: Image.PreserveAspectFit
+        layer.enabled: icon.selected
+        layer.effect: MultiEffect { brightness: 1.0 }
     }
     LineIcon {
         anchors.fill: parent
         visible: !mark.visible
         name: icon.branded ? "agents" : icon.name
-        ink: icon.ink
+        ink: icon.selected ? "#ffffff" : icon.ink
     }
 }

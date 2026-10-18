@@ -366,13 +366,15 @@ Item {
                 antialiasing: true
                 property color surface: Commons.Color.menu.background
                 property color ink: Commons.Color.menu.text
-                property color accent: Commons.Color.accent
+                property color selectedFill: Commons.Color.menu.selectedBackground
+                property color selectedOutline: Commons.Color.menu.selectedBorder
                 property int selection: root.selected
                 property int count: root.selectionCount
                 onCountChanged: requestPaint()
                 onSurfaceChanged: requestPaint()
                 onInkChanged: requestPaint()
-                onAccentChanged: requestPaint()
+                onSelectedFillChanged: requestPaint()
+                onSelectedOutlineChanged: requestPaint()
                 onSelectionChanged: requestPaint()
                 onWidthChanged: requestPaint()
                 onPaint: {
@@ -386,11 +388,11 @@ Item {
                         c.beginPath(); c.arc(center,center,outer,start,end);
                         c.arc(center,center,inner,end,start,true); c.closePath();
                         c.fillStyle = surface; c.fill();
-                        if (i === selection) { c.fillStyle = Commons.Util.alpha(accent, 0.17); c.fill(); }
-                        c.strokeStyle = i === selection ? accent : Commons.Util.alpha(ink, 0.23); c.stroke();
+                        if (i === selection) { c.fillStyle = selectedFill; c.fill(); }
+                        c.strokeStyle = i === selection ? selectedOutline : Commons.Util.alpha(ink, 0.23); c.stroke();
                         if (i === selection) {
                             c.beginPath(); c.arc(center,center,outer-3,start+0.025,end-0.025);
-                            c.strokeStyle = accent; c.lineWidth = 3; c.stroke(); c.lineWidth = 1;
+                            c.strokeStyle = selectedOutline; c.lineWidth = 3; c.stroke(); c.lineWidth = 1;
                         }
                     }
                 }
@@ -411,7 +413,8 @@ Item {
                         y: 0; width: Math.max(22, wheel.width * 0.072); height: width
                         name: modelData.icon
                         appSource: root.appIconSource(modelData)
-                        ink: parent.chosen ? Commons.Color.accent : Commons.Color.menu.text
+                        selected: parent.chosen
+                        ink: Commons.Color.menu.text
                     }
                     Text {
                         anchors.horizontalCenter: parent.horizontalCenter
@@ -419,7 +422,7 @@ Item {
                         width: parent.width; horizontalAlignment: Text.AlignHCenter
                         wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
                         text: modelData.label + (modelData.menu || modelData.children ? " ›" : ""); textFormat: Text.PlainText
-                        color: parent.chosen ? Commons.Color.accent : Commons.Color.menu.text
+                        color: parent.chosen ? "#ffffff" : Commons.Color.menu.text
                         font.family: Commons.Style.font.menuFamily
                         font.pixelSize: Math.max(11, wheel.width * 0.035)
                         font.weight: parent.chosen ? Font.DemiBold : Font.Normal
@@ -429,9 +432,9 @@ Item {
             Rectangle {
                 anchors.centerIn: parent
                 width: parent.width * 0.32; height: width; radius: width / 2
-                color: root.hubActive ? Commons.Util.alpha(Commons.Color.accent, 0.15) : Commons.Color.menu.background
+                color: root.hubActive ? Commons.Color.menu.selectedBackground : Commons.Color.menu.background
                 border.width: 1
-                border.color: root.hubActive ? Commons.Color.accent : Commons.Util.alpha(Commons.Color.menu.text, 0.18)
+                border.color: root.hubActive ? Commons.Color.menu.selectedBorder : Commons.Util.alpha(Commons.Color.menu.text, 0.18)
                 Behavior on color { ColorAnimation { duration: root.config.animation ? Commons.Style.duration(140) : 0 } }
                 Behavior on border.color { ColorAnimation { duration: root.config.animation ? Commons.Style.duration(140) : 0 } }
                 Image {
@@ -450,9 +453,10 @@ Item {
                     source: omarchyMark
                     visible: !root.submenuTitle
                     colorization: 1.0
-                    colorizationColor: root.hubActive ? Commons.Color.accent : Commons.Color.menu.text
+                    colorizationColor: root.hubActive ? "#ffffff" : Commons.Color.menu.text
+                    brightness: root.hubActive ? 1.0 : 0.0
                     shadowEnabled: true
-                    shadowColor: Commons.Color.accent
+                    shadowColor: Commons.Color.menu.selectedBorder
                     shadowBlur: 0.65
                     shadowHorizontalOffset: 0
                     shadowVerticalOffset: 0

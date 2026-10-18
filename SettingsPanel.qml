@@ -109,9 +109,9 @@ FocusScope {
         signal clicked()
         height: Commons.Style.space(42)
         radius: Commons.Style.cornerRadius
-        color: Commons.Util.alpha(Commons.Color.menu.text, mouse.containsMouse || chosen ? 0.09 : 0.025)
+        color: mouse.containsMouse || chosen ? Commons.Color.menu.selectedBackground : Commons.Util.alpha(Commons.Color.menu.text, 0.025)
         border.width: chosen ? 1 : 0
-        border.color: Commons.Color.accent
+        border.color: Commons.Color.menu.selectedBorder
         Label {
             x: Commons.Style.space(9); anchors.verticalCenter: parent.verticalCenter
             visible: row.number !== ""; text: row.number
@@ -122,12 +122,13 @@ FocusScope {
             x: Commons.Style.space(row.number ? 25 : 10); anchors.verticalCenter: parent.verticalCenter
             width: Commons.Style.space(21); height: width
             name: row.iconName; appSource: row.iconSource
-            ink: row.chosen ? Commons.Color.accent : Commons.Color.menu.text
+            selected: row.chosen || mouse.containsMouse
+            ink: Commons.Color.menu.text
         }
         Column {
             x: Commons.Style.space(row.number ? 57 : 42); anchors.verticalCenter: parent.verticalCenter
             width: parent.width - x - Commons.Style.space(25); spacing: 2
-            Label { width: parent.width; text: row.title }
+            Label { width: parent.width; text: row.title; color: row.chosen || mouse.containsMouse ? "#ffffff" : Commons.Color.menu.text }
             Label {
                 width: parent.width; text: row.detail; font.pixelSize: Commons.Style.space(9)
                 color: Commons.Util.alpha(Commons.Color.menu.text, 0.55)
