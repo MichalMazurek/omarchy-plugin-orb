@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Effects
 import qs.Commons as Commons
 
 Item {
@@ -24,8 +23,6 @@ Item {
         sourceSize.width: Math.ceil(width * 2)
         sourceSize.height: Math.ceil(height * 2)
         fillMode: Image.PreserveAspectFit
-        layer.enabled: icon.selected
-        layer.effect: MultiEffect { brightness: 1.0 }
     }
     LineIcon {
         anchors.fill: parent
