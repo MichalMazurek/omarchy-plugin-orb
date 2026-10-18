@@ -1,6 +1,8 @@
 #!/bin/bash
 # One-command local repository installation; no package or system files changed.
 set -euo pipefail
+# A full host rescan can exceed its interactive 2s IPC default on busy desktops.
+export OMARCHY_SHELL_IPC_TIMEOUT=${OMARCHY_SHELL_IPC_TIMEOUT:-10s}
 cd -- "$(dirname -- "$(readlink -f -- "$0")")"
 repo=$PWD
 id=io.github.tcballard.orb
@@ -41,7 +43,17 @@ conflicts=$(jq --arg key "$key" --argjson mask "$mask" '[.[] | select((.key | as
 omarchy plugin validate "$repo"
 target="$HOME/.config/omarchy/plugins/$id"
 if [[ ! -e $target ]]; then
-  omarchy plugin add "$repo" --enable --yes
+  if ! omarchy plugin add "$repo" --enable --yes; then
+    # Clone may have completed before a host rescan timed out. Never replace or
+    # reclone it; finish the idempotent enable step only for this exact origin.
+    [[ -d $target/.git && $(git -C "$target" remote get-url origin) == "$repo" ]] || exit 1
+    echo 'Repository installed; waiting for host discovery to finish.'
+    for attempt in {1..20}; do
+      if omarchy-shell shell listPlugins | jq -e --arg id "$id" 'any(.[]; .id == $id)' >/dev/null; then break; fi
+      sleep 0.1
+    done
+    omarchy plugin enable "$id"
+  fi
 elif [[ -d $target/.git && $(git -C "$target" remote get-url origin) == "$repo" ]]; then
   git -C "$target" pull --ff-only
   omarchy-shell shell rescanPlugins >/dev/null
