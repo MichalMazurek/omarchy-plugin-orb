@@ -32,8 +32,15 @@ FocusScope {
         diameter = config.diameter; animation = config.animation;
         actions = JSON.parse(JSON.stringify(config.actions)); choices = catalog;
         tab = 0; cursor = 2; editingSlot = -1; search.text = "";
+        search.focus = false; navigation.focus = true;
     }
     function draft() { return { diameter: diameter, animation: animation, actions: actions }; }
+    function appIcon(action) {
+        if (!action.desktopId) return "";
+        for (var i = 0; i < choices.length; i++)
+            if (choices[i].action.desktopId === action.desktopId) return choices[i].iconSource || "";
+        return "";
+    }
     function adjust(delta) { diameter = Math.max(220, Math.min(600, diameter + delta)); }
     function editSlot(index) {
         if (busy) return;
@@ -41,10 +48,11 @@ FocusScope {
         Qt.callLater(function() { search.forceActiveFocus(); });
     }
     function backToSlots() {
-        cursor = editingSlot + 2; editingSlot = -1; panel.forceActiveFocus();
+        cursor = editingSlot + 2; editingSlot = -1;
+        search.focus = false; navigation.forceActiveFocus();
     }
     function choose(index) {
-        if (busy || index < 0 || index >= filteredChoices.length) return;
+        if (busy || editingSlot < 0 || index < 0 || index >= filteredChoices.length) return;
         var copy = actions.slice();
         copy[editingSlot] = JSON.parse(JSON.stringify(filteredChoices[index].action));
         actions = copy; backToSlots();
@@ -61,6 +69,9 @@ FocusScope {
         else if (cursor === controlCount - 2) canceled();
         else if (cursor === controlCount - 1) saveRequested();
     }
+    // Keep a real navigation focus target: forcing focus on the scope alone
+    // would return it to the hidden search field after leaving the picker.
+    Item { id: navigation; focus: true }
     Keys.onPressed: event => {
         if (panel.busy) { event.accepted = true; return; }
         if (event.key === Qt.Key_Escape) {
@@ -173,7 +184,7 @@ FocusScope {
                     required property var modelData
                     width: content.width; number: String(index + 1)
                     title: modelData.label; detail: panel.positions[index]
-                    iconName: modelData.icon; chosen: panel.cursor === index + 2
+                    iconName: modelData.icon; iconSource: panel.appIcon(modelData); chosen: panel.cursor === index + 2
                     onClicked: panel.editSlot(index)
                 }
             }
