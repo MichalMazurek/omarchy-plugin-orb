@@ -14,9 +14,12 @@ hl.bind("mouse:273", function()
   local p = hl.get_cursor_pos()
   local monitor = hl.get_monitor_at_cursor()
   if not p or not monitor then return pass end
+  local workspace = monitor.active_workspace
+  if not workspace or monitor.active_special_workspace then return pass end
   -- No desktop actions through application bounds, including window borders.
   for _, window in ipairs(hl.get_windows({ mapped = true })) do
-    if window.visible and not window.hidden and contains(p,
+    local on_desktop = window.pinned or (window.workspace and window.workspace.id == workspace.id)
+    if on_desktop and window.visible and not window.hidden and contains(p,
         axis(window.at, "x", 1), axis(window.at, "y", 2),
         axis(window.size, "x", 1), axis(window.size, "y", 2), 8) then
       return pass
