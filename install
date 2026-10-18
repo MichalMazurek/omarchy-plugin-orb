@@ -37,6 +37,11 @@ for part in "${parts[@]}"; do
 done
 [[ -n $key && $mask -ge 64 ]] || { echo 'Use a Super shortcut with one key.' >&2; exit 1; }
 binds=$(hyprctl binds -j)
+desktop_click=$(jq -r '.desktopRightClick == true' "$source_config")
+if [[ $desktop_click == true ]]; then
+  conflicts=$(jq '[.[] | select(.key == "mouse:273" and .modmask == 0 and .description != "Orb on empty desktop")] | length' <<< "$binds")
+  (( conflicts == 0 )) || { echo 'Unmodified right-click is already bound; leaving it unchanged.' >&2; exit 1; }
+fi
 conflicts=$(jq --arg key "$key" --argjson mask "$mask" '[.[] | select((.key | ascii_upcase) == $key and .modmask == $mask and .description != "Orb shortcut wheel")] | length' <<< "$binds")
 (( conflicts == 0 )) || { echo "Shortcut $canonical is already bound; choose another in $config." >&2; exit 1; }
 [[ -z $(hyprctl configerrors) ]] || { echo 'Resolve existing Hyprland config errors before installing.' >&2; exit 1; }
@@ -73,6 +78,7 @@ backup=$(mktemp -d "$config_dir/hypr/.orb-backup.XXXXXXXX")
 [[ ! -e $bindings ]] || cp -p -- "$bindings" "$backup/bindings.lua"
 [[ ! -e $module ]] || cp -p -- "$module" "$backup/orb.lua"
 printf '%s\n' '-- Orb shortcut wheel: managed by omarchy-plugin-orb/install' "o.bind(\"$canonical\", \"Orb shortcut wheel\", { panel = \"$id\" })" > "$module"
+if [[ $desktop_click == true ]]; then cat "$repo/desktop-click.lua" >> "$module"; fi
 touch "$bindings"
 if ! grep -Fxq 'require("orb") -- Orb shortcut wheel' "$bindings"; then
   printf '\n%s\n' 'require("orb") -- Orb shortcut wheel' >> "$bindings"
@@ -87,3 +93,4 @@ if [[ -n $errors ]]; then
   exit 1
 fi
 printf 'Orb installed. Summon: %s\nConfig: %s\nShortcut backup: %s\n' "$canonical" "$config" "$backup"
+[[ $desktop_click != true ]] || echo 'Right-click on empty desktop also opens Orb; application clicks pass through.'
