@@ -22,7 +22,7 @@ Or clone the feature branch first:
 git clone --branch feature/shortcut-wheel https://github.com/tcballard/omarchy-plugin-orb.git && cd omarchy-plugin-orb && ./install
 ```
 
-The installer uses `omarchy plugin add "$PWD" --enable --yes`, a normal Git-based plugin installation. It checks live keybindings before adding the shortcut, backs up the affected Lua files, and preserves unrelated settings. No sudo, package installation or shell restart. The installed checkout tracks this local source repository; commit changes and rerun `./install` to update it. Main remains the starter until this branch is merged.
+The installer uses `omarchy plugin add "$PWD" --enable --yes`, a normal Git-based plugin installation. It checks live keybindings before adding the shortcut, backs up the affected Lua files, and preserves unrelated settings. No sudo or package installation. Quattro’s rescan can retain cached QML on this development build; if an update still shows the old UI, run `omarchy restart shell` (the bar briefly reloads). The installed checkout tracks this local source repository; commit changes and rerun `./install` to update it. Main remains the starter until this branch is merged. The feature branch is currently local and has not been pushed; the remote clone command becomes available after pushing.
 
 Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the normal Omarchy launchers, Bash, Git, jq and libnotify. Node and a compiler are only development dependencies.
 
@@ -32,6 +32,7 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 - Arrow keys or Tab/Shift+Tab cycle; 1–6 select; Enter launches.
 - Escape/Left/Backspace or the centre button returns from a submenu. Escape on the wheel, outside click, or the summon shortcut again dismisses.
 - The wheel and keyboard hint stay clear of monitor edges and reserved bar space.
+- Submenus with more than six actions use footer arrows, scrolling or Page Up/Down.
 - Opening animates for 190ms; system reduced motion is respected.
 
 Edit `~/.config/omarchy/orb.json` for six top-level labels, icons, command argument arrays, one-level `children` menus, an installed-agent menu (`"menu": "agents"`), diameter, animation and shortcut. The default diameter is 240 theme units, currently 280px on the XPS. See [the example](config.example.json). Commands run without shell-string evaluation. Other changes load live; **rerun `./install` after changing the shortcut**. Invalid configuration retains the last valid actions and shows an error hint.

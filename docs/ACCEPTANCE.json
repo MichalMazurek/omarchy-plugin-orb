@@ -1,12 +1,108 @@
 {
-  "status": "not-run",
-  "input_commit": null,
-  "date": null,
-  "platform": null,
-  "omarchy_version": null,
-  "commands": [],
-  "results": [],
+  "status": "passed-with-limitations",
+  "input_commit": "ede511ff8ea08fd9a7c5d428d910a01978c0bcfb",
+  "date": "2026-10-18T17:51:08.699Z",
+  "platform": "Dell XPS 9320; eDP-1 1920x1200; scale 1",
+  "omarchy_version": "dev 5f7aaeb8c",
+  "commands": [
+    "./tests/native",
+    "ORB_POINTER=\"$PWD/artifacts/input/pointer\" node tests/live.cjs --menus-only --agents --settings",
+    "ORB_POINTER=\"$PWD/artifacts/input/pointer\" node tests/live.cjs --actions --theme"
+  ],
+  "automated_checks": [
+    "Repository identity and policy checks",
+    "Geometry and input hit regions for zero through six sectors",
+    "Configuration validation",
+    "Installed manifest validator and Qt QML parser"
+  ],
+  "live_desktop_checks": [
+    {
+      "name": "Keyboard navigation, wrap, numeric selection and Escape",
+      "pass": true
+    },
+    {
+      "name": "12 open/cancel cycles, repeated summon and toggle, one layer",
+      "pass": true
+    },
+    {
+      "name": "All four physical screen corners stay inside the bar and monitor bounds",
+      "pass": true
+    },
+    {
+      "name": "Real pointer hover, keyboard takes over, outside click dismisses",
+      "pass": true
+    },
+    {
+      "name": "Real action: Browser",
+      "pass": true,
+      "class": "chromium"
+    },
+    {
+      "name": "Real action: Terminal",
+      "pass": true,
+      "class": "com.mitchellh.ghostty"
+    },
+    {
+      "name": "Real action: Files",
+      "pass": true,
+      "class": "org.gnome.Nautilus"
+    },
+    {
+      "name": "Real action: Screenshot",
+      "pass": true,
+      "layers": [
+        "omasnap"
+      ]
+    },
+    {
+      "name": "Real action: Themes",
+      "pass": true,
+      "layers": [
+        "omarchy-image-selector"
+      ]
+    },
+    {
+      "name": "Real action: Plugins",
+      "pass": true,
+      "layers": [
+        "omarchy-menu"
+      ]
+    },
+    {
+      "name": "Compact circular menus, installed-only agents, centre-click back and Escape",
+      "pass": true,
+      "agents": [
+        "Claude Code",
+        "Codex",
+        "Grok"
+      ]
+    },
+    {
+      "name": "Live shell theme token change to Everforest and restoration; app configs untouched",
+      "pass": true
+    },
+    {
+      "name": "Escape restores previous window focus and removes exclusive layer",
+      "pass": true
+    }
+  ],
+  "additional_live_checks": [
+    "Pointer opens Agents and launches Codex; default-agent file unchanged",
+    "Pointer activates circular Settings → Themes and Settings → Plugins",
+    "Centre-click returns to the main wheel without dismissing",
+    "Still images visually inspected: circular Settings and Agents, same 280px diameter"
+  ],
   "limitations": [
-    "No live Omarchy desktop acceptance recorded."
+    "Physical summon key chord needs human confirmation; automated checks use IPC and real Wayland input.",
+    "Multiple physical monitors, fractional scaling and hotplug not tested live.",
+    "Screenshot opens and cancels capture UI; saving a capture not tested.",
+    "Theme test changes shell palette through IPC and restores it; full desktop/application retint not tested.",
+    "More than six submenu actions support paging; paging controls not yet tested live.",
+    "Quattro rescan retained cached QML during this update; a supported omarchy restart shell was required to load changed runtime code.",
+    "No video recording, release, marketplace listing or remote branch push."
+  ],
+  "test_notes": [
+    "The initial focused attempt detected stale rectangular QML. After shell restart, test input was paced to allow compositor focus delivery; focused and full runs passed.",
+    "tests/live.cjs includes uncommitted-at-input-commit harness pacing improvements; application runtime matches input_commit."
   ]
 }

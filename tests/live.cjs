@@ -14,7 +14,7 @@ const ipc = (...args) => run('omarchy-shell', ...args);
 const sleep = ms => new Promise(r=>setTimeout(r,ms));
 const status = () => JSON.parse(ipc(id,'status'));
 const dispatch = expression => run('hyprctl','dispatch',expression);
-const key = k => run('wtype','-k',k);
+const key = k => run('wtype','-s','40','-k',k,'-s','40');
 const saved = {workspace:json('hyprctl','activeworkspace','-j').name, pointer:json('hyprctl','cursorpos','-j'), focus:json('hyprctl','activewindow','-j').address};
 const monitor = json('hyprctl','monitors','-j').find(m=>m.focused);
 assert.equal(monitor.scale,1,'This XPS harness requires scale 1');
@@ -31,7 +31,9 @@ async function until(fn, message, timeout=4000) {
 }
 async function open() {
   ipc('shell','summon',id,'{}');
-  return until(()=>{const s=status();return s.opened&&s.positioned&&s.ready&&s.revealed&&s.visible&&s.opacity===1?s:false;},'Wheel did not become visible');
+  const shown=await until(()=>{const s=status();return s.opened&&s.positioned&&s.ready&&s.revealed&&s.visible&&s.opacity===1?s:false;},'Wheel did not become visible');
+  await sleep(100); // Allow the compositor to deliver keyboard focus after mapping.
+  return shown;
 }
 const pass = (name,detail={}) => {report.push({name,pass:true,...detail});console.log('PASS:',name);};
 function layers() {
