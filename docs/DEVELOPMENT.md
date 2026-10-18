@@ -28,3 +28,7 @@ The optional `--agents` check uses real pointer clicks to open Agents and launch
 Focused circular-menu check: `ORB_POINTER="$PWD/artifacts/input/pointer" node tests/live.cjs --menus-only --agents --settings`. The harness paces keyboard input and waits after surface mapping for compositor focus delivery.
 
 Run `node tests/settings-live.cjs` for the native settings panel. It changes size and animation through the UI, verifies Cancel and Save, restores the original values, checks screen bounds and verifies that no configuration editor opens. It assumes the XPS scale-1 layout used by the main live harness.
+
+Run `node tests/slots-live.cjs` for all six slot drafts, cancellation, an installed Files app save/launch, Postcard save/reopen/launch, and panel bounds. It restores the configuration it started with; `--apply-postcard` deliberately retains Postcard in slot four on success. Keep the desktop idle during this input-driven check. It captures stills only. The older full-action harness assumes the default six-slot layout; use focused checks when you have customized it.
+
+`./tests/native` also uses Lua to check desktop hit-testing and passthrough. `node tests/rightclick-live.cjs` checks real desktop right-click, left-click, the retained Super+right-click resize binding, and a Files context menu in a temporary workspace, then restores workspace/focus/pointer. Native binding contract: https://wiki.hypr.land/configuring/core/binds/#auto-consuming-binds-and-return--ok--false- .

@@ -153,5 +153,54 @@
       "The repeat passed Save/Cancel/restoration, but a later screen-edge open timed out on the concurrently active desktop. A single uninterrupted full run is not claimed.",
       "Original size, animation, focused window and pointer restored after verification. No video recorded."
     ]
+  },
+  "slot_picker_update": {
+    "input_commit": "f2049df",
+    "date": "2026-10-18T19:25:50.561Z",
+    "automated": [
+      "./tests/native passed; desktop IDs, all six slot merges, preservation and conflict handling validated"
+    ],
+    "live": [
+      "Installed-app search resolves a desktop entry and Save persists it",
+      "Selecting an installed app launches a real Files window after Orb dismisses",
+      "Postcard replaces Screenshot, survives reopening, and preserves all other settings",
+      "Clicking the bottom wheel slot opens the real Postcard editor",
+      "Six-slot settings panel stays within all four screen corners"
+    ],
+    "additional": [
+      "All six slot choices and Cancel passed on be1d716 before a later app-launch timeout; focused launch repeat passed on f2049df",
+      "Real slot-list and Postcard-picker stills visually inspected"
+    ],
+    "notes": [
+      "Your existing Ghostty, Postcard and Flea choices preserved",
+      "Fixed hidden search retaining keyboard focus and Enter bubbling into the returned slot list",
+      "A later appearance-regression run timed out at centre activation on the active desktop; no fresh full appearance pass claimed",
+      "No video recorded"
+    ]
+  },
+  "desktop_right_click_update": {
+    "input_commit": "a1ffc4e",
+    "date": "2026-10-18T19:24:36.684Z",
+    "report": [
+      "Real right-click on empty desktop opens Orb; Escape dismisses",
+      "Left-click remains unchanged; Super+right-click resize binding preserved",
+      "Right-click inside Files passes through without opening Orb; context-menu still captured",
+      "Hyprland configuration remains clean"
+    ],
+    "automated": [
+      "Lua hit-testing and passthrough tests passed",
+      "Hyprland configerrors empty after installation and live checks"
+    ],
+    "visual": "Files context menu confirmed in real still; Orb did not intercept the click.",
+    "limitations": [
+      "Conservative panel rectangles exclude transparent dock area",
+      "Special workspaces intentionally pass through",
+      "Physical multi-monitor and fractional-scale behaviour not tested"
+    ],
+    "notes": [
+      "Initial guard corrected for windows on other workspaces and the additional Wallpaper Engine background surface",
+      "Desktop right-click replaces the wallpaper right-double-click theme gesture; application context menus and Super+right-click resize remain",
+      "Workspace, focus and pointer restored; only the test Files window closed"
+    ]
   }
 }
