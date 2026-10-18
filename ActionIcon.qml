@@ -8,8 +8,8 @@ Item {
     property color ink: Commons.Color.menu.text
     property bool selected: false
     readonly property bool branded: name === "codex" || name === "claude" || name === "grok"
-    // The same starter glyphs used by Omarchy's Agents panel.
-    readonly property string starterGlyph: name === "themes" ? "󰏘" : name === "plugins" ? "󰐱" : name === "app" ? "󰣆" : ""
+    // Native glyphs from Omarchy's Agents panel and Postcard's bar widget.
+    readonly property string nativeGlyph: name === "themes" ? "󰏘" : name === "plugins" ? "󰐱" : name === "app" ? "󰣆" : name === "postcard" ? "󰆟" : ""
     readonly property color surface: Commons.Color.menu.background
     function linear(channel) {
         return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
@@ -28,8 +28,8 @@ Item {
     }
     Text {
         anchors.fill: parent
-        visible: !mark.visible && icon.starterGlyph !== ""
-        text: icon.starterGlyph; textFormat: Text.PlainText
+        visible: !mark.visible && icon.nativeGlyph !== ""
+        text: icon.nativeGlyph; textFormat: Text.PlainText
         font.family: Commons.Style.font.family
         font.pixelSize: height
         horizontalAlignment: Text.AlignHCenter
@@ -38,7 +38,7 @@ Item {
     }
     LineIcon {
         anchors.fill: parent
-        visible: !mark.visible && icon.starterGlyph === ""
+        visible: !mark.visible && icon.nativeGlyph === ""
         name: icon.branded ? "agents" : icon.name
         ink: icon.selected ? "#ffffff" : icon.ink
     }
