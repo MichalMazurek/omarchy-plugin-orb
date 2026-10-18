@@ -133,5 +133,24 @@
     "limitations": [
       "Focused visual and centre-navigation check only; prior broader action acceptance remains above."
     ]
+  },
+  "settings_panel_update": {
+    "input_commit": "41bd451",
+    "date": "2026-10-18T18:19:03.834Z",
+    "automated": [
+      "./tests/native passed"
+    ],
+    "live": [
+      "Centre opens native panel; Cancel/Escape discards size and animation drafts",
+      "Save persists settings; reopening loads them; actions, shortcut and other fields preserved",
+      "Original size and animation restored through the panel"
+    ],
+    "visual": "Settings panel and glowing centre reviewed in real XPS still captures.",
+    "scope": "Panel edits wheel size and opening animation; shows the current summon shortcut. Action editing and shortcut editing are not included in this small panel.",
+    "notes": [
+      "Supersedes the brief configuration-editor implementation; centre activation no longer launches an editor.",
+      "An earlier exact-window-count assertion noticed an unrelated iOMARCHY boot-test terminal. It was identified and left untouched; the focused editor-window check passed.",
+      "Original size, animation, focused window and pointer restored after verification. No video recorded."
+    ]
   }
 }
