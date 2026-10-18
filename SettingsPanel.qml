@@ -17,11 +17,14 @@ FocusScope {
     property int cursor: 2
     property int editingSlot: -1
     property int pickerCursor: 0
-    readonly property var positions: ["Top", "Upper right", "Lower right", "Bottom", "Lower left", "Upper left"]
+    readonly property var positions: actions.length === 8 ? ["Top", "Upper right", "Right", "Lower right", "Bottom", "Lower left", "Left", "Upper left"]
+        : actions.length === 7 ? ["Top", "Upper right", "Right", "Lower right", "Lower left", "Left", "Upper left"]
+        : ["Top", "Upper right", "Lower right", "Bottom", "Lower left", "Upper left"]
     readonly property var filteredChoices: choices.filter(function(row) {
         return (row.title + " " + row.detail).toLowerCase().indexOf(search.text.trim().toLowerCase()) >= 0;
     })
-    readonly property int controlCount: tab === 0 ? 10 : 6
+    readonly property int controlCount: tab === 0 ? actions.length + 5 : 6
+    onCursorChanged: if (tab === 0 && cursor >= 2 && cursor < actions.length + 2) slotList.positionViewAtIndex(cursor - 2, ListView.Contain)
     signal saveRequested()
     signal canceled()
     implicitHeight: content.height + Commons.Style.space(36)
@@ -51,6 +54,12 @@ FocusScope {
         cursor = editingSlot + 2; editingSlot = -1;
         search.focus = false; navigation.forceActiveFocus();
     }
+    function addSlot() { if (actions.length < 8) editSlot(actions.length); }
+    function removeSlot(index) {
+        if (busy || actions.length <= 6 || index < 0 || index >= actions.length) return;
+        var copy = actions.slice(); copy.splice(index, 1); actions = copy;
+        cursor = Math.min(index, actions.length - 1) + 2; navigation.forceActiveFocus();
+    }
     function choose(index) {
         if (busy || editingSlot < 0 || index < 0 || index >= filteredChoices.length) return;
         var copy = actions.slice();
@@ -64,7 +73,8 @@ FocusScope {
     }
     function activateControl() {
         if (cursor < 2) { tab = cursor; cursor = 2; }
-        else if (tab === 0 && cursor < 8) editSlot(cursor - 2);
+        else if (tab === 0 && cursor < actions.length + 2) editSlot(cursor - 2);
+        else if (tab === 0 && cursor === actions.length + 2) addSlot();
         else if (tab === 1 && cursor === 3) animation = !animation;
         else if (cursor === controlCount - 2) canceled();
         else if (cursor === controlCount - 1) saveRequested();
@@ -81,7 +91,8 @@ FocusScope {
             else if (event.key === Qt.Key_Up) panel.movePicker(-1);
             else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) panel.choose(panel.pickerCursor);
             else return;
-        } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab || event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
+        } else if (event.key === Qt.Key_Delete && panel.tab === 0) panel.removeSlot(panel.cursor - 2);
+        else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab || event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
             var back = event.key === Qt.Key_Backtab || event.key === Qt.Key_Up || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier));
             panel.cursor = (panel.cursor + (back ? panel.controlCount - 1 : 1)) % panel.controlCount;
         } else if (panel.tab === 1 && panel.cursor === 2 && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) panel.adjust(event.key === Qt.Key_Right ? 10 : -10);
@@ -106,7 +117,9 @@ FocusScope {
         property url iconSource: ""
         property string number: ""
         property bool chosen: false
+        property bool removable: false
         signal clicked()
+        signal removed()
         height: Commons.Style.space(42)
         radius: Commons.Style.cornerRadius
         color: mouse.containsMouse || chosen ? Commons.Color.menu.selectedBackground : Commons.Util.alpha(Commons.Color.menu.text, 0.025)
@@ -134,8 +147,13 @@ FocusScope {
                 color: Commons.Util.alpha(Commons.Color.menu.text, 0.55)
             }
         }
-        Label { anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: "›"; color: Commons.Color.accent }
+        Label { visible: !row.removable; anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: "›"; color: Commons.Color.accent }
         MouseArea { id: mouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; enabled: !panel.busy; onClicked: row.clicked() }
+        Button {
+            visible: row.removable; anchors.right: parent.right; anchors.rightMargin: 3; anchors.verticalCenter: parent.verticalCenter
+            width: Commons.Style.space(24); text: "×"; tooltipText: "Remove slot"; enabled: !panel.busy
+            foreground: Commons.Color.menu.text; onClicked: row.removed()
+        }
     }
 
     Rectangle {
@@ -150,12 +168,13 @@ FocusScope {
         width: parent.width - x * 2; spacing: Commons.Style.space(10)
         Label {
             width: parent.width
-            text: panel.editingSlot >= 0 ? "Choose slot " + (panel.editingSlot + 1) : "Orb settings"
+            text: panel.editingSlot === panel.actions.length ? "Add slot " + (panel.editingSlot + 1) : panel.editingSlot >= 0 ? "Choose slot " + (panel.editingSlot + 1) : "Orb settings"
             font.pixelSize: Commons.Style.space(18); font.weight: Font.DemiBold
         }
         Label {
             width: parent.width
-            text: panel.editingSlot >= 0 ? panel.positions[panel.editingSlot] + " · " + panel.actions[panel.editingSlot].label
+            text: panel.editingSlot === panel.actions.length ? "Choose another app, plugin or shortcut"
+                : panel.editingSlot >= 0 ? panel.positions[panel.editingSlot] + " · " + panel.actions[panel.editingSlot].label
                 : "Your shortcuts, in your orbit."
             font.pixelSize: Commons.Style.space(11); color: Commons.Util.alpha(Commons.Color.menu.text, 0.6)
         }
@@ -175,20 +194,31 @@ FocusScope {
                 }
             }
         }
-        Column {
+        ListView {
+            id: slotList
             visible: panel.editingSlot < 0 && panel.tab === 0
             width: parent.width; spacing: Commons.Style.space(4)
-            Repeater {
-                model: panel.actions
+            height: Math.min(6, panel.actions.length) * Commons.Style.space(46) - Commons.Style.space(4)
+            clip: true; boundsBehavior: Flickable.StopAtBounds
+            model: panel.actions
                 delegate: ChoiceRow {
                     required property int index
                     required property var modelData
                     width: content.width; number: String(index + 1)
                     title: modelData.label; detail: panel.positions[index]
                     iconName: modelData.icon; iconSource: panel.appIcon(modelData); chosen: panel.cursor === index + 2
+                    removable: panel.actions.length > 6
                     onClicked: panel.editSlot(index)
+                    onRemoved: panel.removeSlot(index)
                 }
-            }
+        }
+        Button {
+            visible: panel.editingSlot < 0 && panel.tab === 0
+            width: parent.width; text: panel.actions.length < 8 ? "+ Add slot · " + panel.actions.length + " / 8" : "8 / 8 slots"
+            enabled: !panel.busy && panel.actions.length < 8; bordered: true
+            hasCursor: panel.cursor === panel.actions.length + 2
+            foreground: Commons.Color.menu.text; fontFamily: Commons.Style.font.menuFamily
+            onClicked: panel.addSlot()
         }
         Column {
             visible: panel.editingSlot < 0 && panel.tab === 1

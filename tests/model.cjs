@@ -85,3 +85,29 @@ for (let i=0;i<6;i++) {
     assert.deepEqual(model.mergeSettings(base, original, allSlots).document.actions[i], postcard);
 }
 console.log('PASS: every slot editable, app IDs validated, untouched settings preserved, concurrent slot conflicts rejected');
+
+for (const count of [6,7,8]) {
+  const expanded = clone(base);
+  while (expanded.actions.length < count) expanded.actions.push(postcard);
+  assert.equal(model.parse(JSON.stringify(expanded), null).error, '');
+  for (let slot=0;slot<count;slot++) {
+    const angle=(slot*360/count-90)*Math.PI/180;
+    assert.equal(model.hit(128.5+Math.cos(angle)*85,128.5+Math.sin(angle)*85,257,count),slot);
+  }
+}
+for (const count of [5,9]) {
+  const invalid=clone(base);while(invalid.actions.length<count)invalid.actions.push(postcard);invalid.actions.length=count;
+  assert.ok(model.parse(JSON.stringify(invalid),null).error);
+}
+const expandedDraft=clone(original);expandedDraft.actions.push(postcard,app);
+const metadata=clone(base);metadata.actions[0].custom='preserve';metadata.desktopRightClick=true;
+const added=model.mergeSettings(metadata,original,expandedDraft);
+assert.equal(added.error,'');assert.equal(added.document.actions.length,8);assert.equal(added.document.actions[0].custom,'preserve');assert.equal(added.document.desktopRightClick,true);
+const eight=model.parse(JSON.stringify(added.document),null).config;
+const reduced=clone(eight);reduced.actions.splice(1,1);reduced.actions.pop();
+const removed=model.mergeSettings(added.document,eight,reduced);
+assert.equal(removed.error,'');assert.equal(removed.document.actions.length,6);assert.equal(removed.document.actions[1].label,'Files');assert.equal(removed.document.actions[0].custom,'preserve');
+const concurrentlyEdited=clone(base);concurrentlyEdited.actions[1].label='Different';
+assert.match(model.mergeSettings(concurrentlyEdited,original,expandedDraft).error,/changed elsewhere/);
+assert.equal(model.mergeSettings(added.document,original,original).document.actions.length,8);
+console.log('PASS: 6–8 slots, radial hit regions, add/remove persistence, metadata preservation and structural conflicts');

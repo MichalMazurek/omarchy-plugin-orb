@@ -22,8 +22,22 @@ function mergeSettings(document, original, draft) {
     var result = JSON.parse(JSON.stringify(document));
     var current = parse(JSON.stringify(document), null);
     if (current.error) return { error: current.error };
-    for (var i = 0; i < 6; i++) {
+    if (draft.actions.length !== original.actions.length) {
+        if (JSON.stringify(current.config.actions) !== JSON.stringify(original.actions))
+            return { error: "Slots changed elsewhere. Reopen settings before adding or removing slots." };
+        var used = [];
+        result.actions = draft.actions.map(function(a) {
+            for (var index = 0; index < original.actions.length; index++) {
+                if (!used[index] && JSON.stringify(a) === JSON.stringify(original.actions[index])) {
+                    used[index] = true; return document.actions[index];
+                }
+            }
+            return a;
+        });
+    } else for (var i = 0; i < original.actions.length; i++) {
         if (JSON.stringify(original.actions[i]) === JSON.stringify(draft.actions[i])) continue;
+        if (current.config.actions.length !== original.actions.length)
+            return { error: "Slots changed elsewhere. Reopen settings to load them." };
         if (JSON.stringify(current.config.actions[i]) !== JSON.stringify(original.actions[i]) && JSON.stringify(current.config.actions[i]) !== JSON.stringify(draft.actions[i]))
             return { error: "Slot " + (i + 1) + " changed elsewhere. Reopen settings to load it." };
         result.actions[i] = draft.actions[i];
@@ -35,10 +49,10 @@ function mergeSettings(document, original, draft) {
 function parse(raw, fallback) {
     var value;
     try { value = JSON.parse(raw); } catch (error) { return { config: fallback, error: "Invalid JSON; using the last valid configuration." }; }
-    if (!value || typeof value !== "object" || !Array.isArray(value.actions) || value.actions.length !== 6)
-        return { config: fallback, error: "Orb requires exactly six top-level actions." };
+    if (!value || typeof value !== "object" || !Array.isArray(value.actions) || value.actions.length < 6 || value.actions.length > 8)
+        return { config: fallback, error: "Orb supports six to eight top-level actions." };
     var actions = [];
-    for (var i = 0; i < 6; i++) {
+    for (var i = 0; i < value.actions.length; i++) {
         var a = action(value.actions[i], 0);
         if (!a)
             return { config: fallback, error: "Invalid action " + (i + 1) + "; using the last valid configuration." };

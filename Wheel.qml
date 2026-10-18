@@ -404,7 +404,7 @@ Item {
                     required property var modelData
                     readonly property real angle: (index * 360 / root.selectionCount - 90) * Math.PI / 180
                     readonly property bool chosen: root.selected === index
-                    width: wheel.width * 0.28
+                    width: wheel.width * (root.selectionCount > 6 ? 0.24 : 0.28)
                     height: wheel.width * 0.16
                     x: wheel.width/2 + Math.cos(angle) * wheel.width * 0.33 - width/2
                     y: wheel.height/2 + Math.sin(angle) * wheel.width * 0.33 - height/2
