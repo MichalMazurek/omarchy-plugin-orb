@@ -1,0 +1,104 @@
+#!/bin/bash
+# One-command local repository installation; no package or system files changed.
+set -euo pipefail
+# A full host rescan can exceed its interactive 2s IPC default on busy desktops.
+export OMARCHY_SHELL_IPC_TIMEOUT=${OMARCHY_SHELL_IPC_TIMEOUT:-10s}
+cd -- "$(dirname -- "$(readlink -f -- "$0")")"
+repo=$PWD
+id=io.github.tcballard.orb
+for cmd in git jq omarchy omarchy-shell hyprctl; do
+  command -v "$cmd" >/dev/null || { echo "Missing dependency: $cmd" >&2; exit 1; }
+done
+config_dir=${XDG_CONFIG_HOME:-$HOME/.config}
+config="$config_dir/omarchy/orb.json"
+source_config=$config
+[[ -f $source_config ]] || source_config="$repo/config.example.json"
+shortcut=$(jq -er '.shortcut' "$source_config")
+IFS='+' read -ra parts <<< "$shortcut"
+mask=0
+key=""
+canonical=""
+for part in "${parts[@]}"; do
+  part=${part//[[:space:]]/}
+  part=${part^^}
+  [[ -z $key ]] || { echo 'The key must be the final shortcut token.' >&2; exit 1; }
+  case "$part" in
+    SUPER) bit=64 ;;
+    ALT) bit=8 ;;
+    CTRL) bit=4 ;;
+    SHIFT) bit=1 ;;
+    *) [[ $part =~ ^([A-Z0-9]|F[1-9]|F1[0-2]|SPACE)$ ]] || { echo "Unsupported shortcut token: $part" >&2; exit 1; }; key=$part; bit=0 ;;
+  esac
+  if (( bit )); then
+    (( (mask & bit) == 0 )) || { echo 'Duplicate shortcut modifier.' >&2; exit 1; }
+    mask=$((mask | bit))
+  fi
+  canonical+="${canonical:+ + }$part"
+done
+[[ -n $key && $mask -ge 64 ]] || { echo 'Use a Super shortcut with one key.' >&2; exit 1; }
+binds=$(hyprctl binds -j)
+desktop_click=$(jq -r '.desktopRightClick == true' "$source_config")
+if [[ $desktop_click == true ]]; then
+  conflicts=$(jq '[.[] | select(.key == "mouse:273" and .modmask == 0 and .description != "Orb on empty desktop")] | length' <<< "$binds")
+  (( conflicts == 0 )) || { echo 'Unmodified right-click is already bound; leaving it unchanged.' >&2; exit 1; }
+fi
+conflicts=$(jq --arg key "$key" --argjson mask "$mask" '[.[] | select((.key | ascii_upcase) == $key and .modmask == $mask and .description != "Orb shortcut wheel")] | length' <<< "$binds")
+(( conflicts == 0 )) || { echo "Shortcut $canonical is already bound; choose another in $config." >&2; exit 1; }
+[[ -z $(hyprctl configerrors) ]] || { echo 'Resolve existing Hyprland config errors before installing.' >&2; exit 1; }
+omarchy plugin validate "$repo"
+target="$HOME/.config/omarchy/plugins/$id"
+if [[ ! -e $target ]]; then
+  if ! omarchy plugin add "$repo" --enable --yes; then
+    # Clone may have completed before a host rescan timed out. Never replace or
+    # reclone it; finish the idempotent enable step only for this exact origin.
+    [[ -d $target/.git && $(git -C "$target" remote get-url origin) == "$repo" ]] || exit 1
+    echo 'Repository installed; waiting for host discovery to finish.'
+    for attempt in {1..20}; do
+      if omarchy-shell shell listPlugins | jq -e --arg id "$id" 'any(.[]; .id == $id)' >/dev/null; then break; fi
+      sleep 0.1
+    done
+    omarchy plugin enable "$id"
+  fi
+elif [[ -d $target/.git && $(git -C "$target" remote get-url origin) == "$repo" ]]; then
+  git -C "$target" pull --ff-only
+  omarchy-shell shell rescanPlugins >/dev/null
+  omarchy plugin enable "$id"
+else
+  echo "Refusing to replace an unrelated installation: $target" >&2
+  exit 1
+fi
+mkdir -p "$config_dir/omarchy" "$config_dir/hypr"
+[[ -f $config ]] || cp -- "$repo/config.example.json" "$config"
+bindings="$config_dir/hypr/bindings.lua"
+module="$config_dir/hypr/orb.lua"
+if [[ -e $module ]] && ! head -1 "$module" | grep -Fxq -- '-- Orb shortcut wheel: managed by omarchy-plugin-orb/install'; then
+  echo "Refusing to overwrite $module" >&2; exit 1
+fi
+backup=$(mktemp -d "$config_dir/hypr/.orb-backup.XXXXXXXX")
+[[ ! -e $bindings ]] || cp -p -- "$bindings" "$backup/bindings.lua"
+[[ ! -e $module ]] || cp -p -- "$module" "$backup/orb.lua"
+printf '%s\n' '-- Orb shortcut wheel: managed by omarchy-plugin-orb/install' "o.bind(\"$canonical\", \"Orb shortcut wheel\", { panel = \"$id\" })" > "$module"
+if [[ $desktop_click == true ]]; then cat "$repo/desktop-click.lua" >> "$module"; fi
+touch "$bindings"
+if ! grep -Fxq 'require("orb") -- Orb shortcut wheel' "$bindings"; then
+  printf '\n%s\n' 'require("orb") -- Orb shortcut wheel' >> "$bindings"
+fi
+if ! hyprctl reload >/dev/null; then
+  errors='Hyprland reload failed.'
+elif ! errors=$(hyprctl configerrors); then
+  errors='Could not check Hyprland configuration.'
+fi
+if [[ -n $errors ]]; then
+  for file in bindings.lua orb.lua; do
+    if [[ -e $backup/$file ]]; then
+      cp -p -- "$backup/$file" "$config_dir/hypr/$file"
+    else
+      rm -f -- "$config_dir/hypr/$file"
+    fi
+  done
+  hyprctl reload >/dev/null || echo 'Could not reload the restored configuration.' >&2
+  printf 'Shortcut installation failed: %s\nBackup: %s\n' "$errors" "$backup" >&2
+  exit 1
+fi
+printf 'Orb installed. Summon: %s\nConfig: %s\nShortcut backup: %s\n' "$canonical" "$config" "$backup"
+[[ $desktop_click != true ]] || echo 'Right-click on empty desktop also opens Orb; application clicks pass through.'

@@ -1,0 +1,14 @@
+#!/bin/bash
+set -u
+label=$1
+shift
+if ! command -v "$1" >/dev/null 2>&1; then
+  notify-send --app-name=Orb --urgency=normal 'Orb could not launch' "Missing command: $1"
+  exit 127
+fi
+"$@"
+result=$?
+if (( result != 0 )); then
+  notify-send --app-name=Orb --urgency=normal 'Orb could not launch' "$label exited with status $result"
+fi
+exit "$result"
