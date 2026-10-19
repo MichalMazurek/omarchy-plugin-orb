@@ -1,16 +1,18 @@
 <h1 align="center">Orb</h1>
 
-<p align="center">Your everyday shortcuts, one pointer-centred wheel.</p>
+<p align="center">A shortcut wheel for Omarchy.</p>
 
 <p align="center"><a href="https://github.com/tcballard/omarchy-badges"><img alt="Built for Omarchy: Plugin" height="20" src="https://raw.githubusercontent.com/tcballard/omarchy-badges/75975e5b5bf75e7ede3764bcd2950046f7abfe2c/badges/v1/omarchy-plugin.svg"></a></p>
 
-**Interaction inspiration: Tangerine for Mac.** Orb is an original implementation for Omarchy, with original QML and general-purpose icons; it contains no Tangerine code or assets. Built from Tom Ballard's Omarchy plugin starter and [Build Omarchy Plugins](https://github.com/tcballard/build-omarchy-plugins). [Credits](CREDITS.md).
+Launch apps, switch themes and open your installed coding agents from a wheel near your pointer. Press **Super+Alt+O**, then click an icon or select it with the keyboard and press Enter. Choose six to eight shortcuts in Orb’s settings; the wheel follows your Omarchy shell theme.
 
-Press **Super+Alt+O**, hover an action, and click. The compact wheel defaults to Browser, Terminal, Files and Screenshot, and every slot can be changed in its settings panel. **Settings → Themes / Plugins** and **Agents → installed clients** open circular submenus in the same wheel. Launches use existing Omarchy terminal and application launchers. Orb runs inside Quattro's existing shell, with its active colours, font sizing and reduced-motion setting.
+**Prototype for current Omarchy Quattro.** [Install and update](#install-the-prototype).
 
 ![Orb with eight configured slots and a selected Browser action](preview.png)
 
-Real XPS capture of a customized eight-slot wheel. The default installation starts with six. [Capture provenance](docs/PREVIEW.json).
+Real XPS capture with eight shortcuts; six by default. [Capture details](docs/PREVIEW.json).
+
+Inspired by **Tangerine for Mac**. Original implementation built from Tom Ballard’s [Omarchy plugin starter](https://github.com/tcballard/build-omarchy-plugins). [Credits](CREDITS.md).
 
 ## Install the prototype
 
