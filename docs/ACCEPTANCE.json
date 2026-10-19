@@ -269,7 +269,6 @@
       "Current preview captured on the real XPS, reviewed without application content; no video recorded"
     ],
     "remaining": [
-      "Fresh removal/reinstall lifecycle with settings preservation",
       "Uninterrupted six-to-eight-to-six slot Save flow",
       "Human physical Super+Alt+O shortcut confirmation",
       "Green GitHub CI and reviewed merge to default branch",
@@ -279,6 +278,50 @@
       "Historical acceptance and its limitations remain unchanged above.",
       "Temporary tags created only in disposable archive-test repositories; no candidate tag or release published.",
       "Release skill Python preflight was not run, respecting the no-Python constraint."
+    ]
+  },
+  "removal_reinstall": {
+    "date": "2026-10-19T01:27:06.973Z",
+    "input_commit": "f3923a4e36ce1a806ebe964126d241343ed68596",
+    "omarchy_commit": "57e4d3d1294e02dd3866a066e2f7276bd86c9938",
+    "checks": [
+      {
+        "name": "Removal unloads Orb, deletes its checkout/module and removes both owned bindings",
+        "pass": true
+      },
+      {
+        "name": "Removal preserves Orb configuration, unrelated bindings and shell settings",
+        "pass": true
+      },
+      {
+        "name": "Fresh Git reinstall enables the exact candidate with one shortcut and the configured right-click binding",
+        "pass": true
+      },
+      {
+        "name": "Repeating install is idempotent; no duplicate bindings or changed settings",
+        "pass": true
+      },
+      {
+        "name": "Three live summon/Escape cycles work; settings retain all slots, size and animation",
+        "pass": true
+      },
+      {
+        "name": "Dismissal restores the previously focused window",
+        "pass": true
+      }
+    ],
+    "previous_install": "ca112249cf16e710808ebab72eeafd37071fa224",
+    "config_sha256": "87e27e5b682d30ad32dc06fbc9e5669721ee274657daffff9aad7f764b4838de",
+    "slot_count": 8,
+    "diameter": 360,
+    "status": "passed",
+    "harness": "tests/lifecycle-live.cjs",
+    "harness_sha256": "0df153738b2b31a874a489ef68557da330ce39deab4c1220a3f7374d51d17c85",
+    "notes": [
+      "Live test against the actual XPS shell; no nested desktop or video.",
+      "Orb configuration was byte-for-byte preserved; unrelated binding content and shell settings matched.",
+      "The test harness was untracked at input_commit; its digest records the executed version.",
+      "No runtime changes were required. Physical shortcut and full slot Save lifecycle remain separate checks."
     ]
   }
 }
