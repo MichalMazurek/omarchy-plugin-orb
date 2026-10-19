@@ -510,7 +510,7 @@ Item {
                         : root.submenuTitle ? "Centre to go back · Enter to launch" : "Select · click or Enter"
                     textFormat: Text.PlainText
                     font.family: Commons.Style.font.menuFamily; font.pixelSize: Math.round(11 * wheel.captionScale)
-                    color: root.configError ? Commons.Color.urgent : root.selected >= 0 ? "#ffffff" : Commons.Util.alpha(Commons.Color.menu.text, 0.7)
+                    color: root.configError ? Commons.Color.urgent : root.selected >= 0 ? Commons.Color.menu.text : Commons.Util.alpha(Commons.Color.menu.text, 0.7)
                 }
                 Repeater {
                     model: root.pageCount > 1 ? 2 : 0

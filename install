@@ -83,12 +83,20 @@ touch "$bindings"
 if ! grep -Fxq 'require("orb") -- Orb shortcut wheel' "$bindings"; then
   printf '\n%s\n' 'require("orb") -- Orb shortcut wheel' >> "$bindings"
 fi
-hyprctl reload >/dev/null
-errors=$(hyprctl configerrors)
+if ! hyprctl reload >/dev/null; then
+  errors='Hyprland reload failed.'
+elif ! errors=$(hyprctl configerrors); then
+  errors='Could not check Hyprland configuration.'
+fi
 if [[ -n $errors ]]; then
-  [[ ! -e $backup/bindings.lua ]] || cp -p "$backup/bindings.lua" "$bindings"
-  [[ ! -e $backup/orb.lua ]] || cp -p "$backup/orb.lua" "$module"
-  hyprctl reload >/dev/null
+  for file in bindings.lua orb.lua; do
+    if [[ -e $backup/$file ]]; then
+      cp -p -- "$backup/$file" "$config_dir/hypr/$file"
+    else
+      rm -f -- "$config_dir/hypr/$file"
+    fi
+  done
+  hyprctl reload >/dev/null || echo 'Could not reload the restored configuration.' >&2
   printf 'Shortcut installation failed: %s\nBackup: %s\n' "$errors" "$backup" >&2
   exit 1
 fi
