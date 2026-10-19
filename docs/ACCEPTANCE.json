@@ -245,5 +245,40 @@
     "notes": [
       "Supersedes the 300px breakpoint. Original diameter restored."
     ]
+  },
+  "caption_scaling": {
+    "input_commit": "ca112249cf16e710808ebab72eeafd37071fa224",
+    "date": "2026-10-18T21:01:01.122Z",
+    "report": [
+      "280px: 11px caption, full pointer/keyboard and submenu labels, footer within screen edges",
+      "467px: 18px caption, full pointer/keyboard and submenu labels, footer within screen edges",
+      "700px: 28px caption, full pointer/keyboard and submenu labels, footer within screen edges"
+    ],
+    "visual": "467px still reviewed; caption and pill scale together. Original diameter restored."
+  },
+  "release_preparation": {
+    "status": "not-yet-tag-ready",
+    "input_commit": "a1186e2877871011ea282b2f03b8b874f6c95762",
+    "date": "2026-10-19T01:23:12.150Z",
+    "omarchy_commit": "57e4d3d1294e02dd3866a066e2f7276bd86c9938",
+    "automated": [
+      "./tests/native passed: portable/model/Lua checks, official manifest validation and QML parsing",
+      "Archive fixture passed: complete source extraction, runnable checks, source identity, SPDX package identity, sizes and complete checksums; lightweight tags and dirty trees rejected"
+    ],
+    "live": [
+      "Current preview captured on the real XPS, reviewed without application content; no video recorded"
+    ],
+    "remaining": [
+      "Fresh removal/reinstall lifecycle with settings preservation",
+      "Uninterrupted six-to-eight-to-six slot Save flow",
+      "Human physical Super+Alt+O shortcut confirmation",
+      "Green GitHub CI and reviewed merge to default branch",
+      "Final source acceptance, annotated tag and verification of downloaded draft assets"
+    ],
+    "notes": [
+      "Historical acceptance and its limitations remain unchanged above.",
+      "Temporary tags created only in disposable archive-test repositories; no candidate tag or release published.",
+      "Release skill Python preflight was not run, respecting the no-Python constraint."
+    ]
   }
 }
