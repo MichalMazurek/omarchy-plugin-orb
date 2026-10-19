@@ -16,7 +16,6 @@ export function check(base=root) {
   for(const f of ['README.md','LICENSE','CREDITS.md','AGENTS.md','docs/ACCEPTANCE.json','.github/workflows/ci.yml','.github/workflows/release.yml']) assert(tree.includes(f),`Missing ${f}`);
   const readme=read('README.md');
   assert(readme.includes('<h1 align="center">'),'Centered title required');
-  assert(!readme.includes('](preview.png)'), 'Do not embed an absent preview');
   for(const m of readme.matchAll(/\]\(([^)]+)\)/g)) {
     const link=m[1].split('#')[0];
     if(link && !/^[a-z]+:/.test(link)) assert(fs.existsSync(path.join(base,link)),`Broken README link ${link}`);

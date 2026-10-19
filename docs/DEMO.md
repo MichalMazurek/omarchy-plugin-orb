@@ -17,8 +17,8 @@ The stop command prints the path. No audio is requested. Do not interrupt an exi
 
 X-thread drafts, based on observed prototype behaviour:
 
-1. “Orb is running inside Quattro on the XPS: six labelled, themed sectors and an original radial design.”
-2. “All six launchers passed on the real desktop. Pointer clicks, keyboard selection, repeated opening, cancellation, screen edges and focus restoration work.”
-3. “The prototype installs from a Git checkout with one command. Theme colours update live. No helper daemon, Python, nested menus or visual editor.”
+1. “Orb is running inside Quattro on the XPS: six default slots, expandable to eight, with native icons and action names below the wheel.”
+2. “Pointer and keyboard selection, circular agent menus, cancellation and focus restoration are working. The caption now scales with Orb, with live checks at 280, 467 and 700px.”
+3. “The working feature branch is on GitHub. Preparing v0.1.0 with release notes, source checksums and a real desktop preview; final lifecycle acceptance and tagging are still ahead.”
 
 Nothing is posted automatically.

@@ -37,4 +37,6 @@ Run `node tests/slots-live.cjs` for all six slot drafts, cancellation, an instal
 
 `node tests/extras-live.cjs` checks a saved layout containing Make something cool: all pointer sectors, last-slot keyboard selection, its circular submenu and back navigation, and removal/Cancel without saving. It compares the starter prompts against the installed Agents panel and deliberately does not execute them.
 
-`node tests/compact-live.cjs` checks 280px and 303px layouts on this XPS, pointer/keyboard captions and submenu captions, then restores the original diameter without overwriting slot changes.
+`node tests/compact-live.cjs` checks 280px, 467px and 700px layouts on this XPS, growing pointer/keyboard captions, submenu captions and screen-edge clearance, then restores the original diameter without overwriting slot changes.
+
+`node tests/preview-live.cjs` captures a real still on an empty workspace and restores workspace, pointer and focus. It rejects an intervening workspace change or visible application window; visually inspect the result before publishing. It does not record video.

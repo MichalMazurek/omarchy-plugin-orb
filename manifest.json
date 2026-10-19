@@ -5,7 +5,7 @@
   "version": "0.1.0",
   "author": "Tom Ballard",
   "license": "MIT",
-  "description": "Six everyday shortcuts, one pointer-centred wheel.",
+  "description": "A themed shortcut wheel with six to eight configurable slots and circular submenus.",
   "kinds": [
     "menu"
   ],

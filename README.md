@@ -8,6 +8,10 @@
 
 Press **Super+Alt+O**, hover an action, and click. The compact wheel defaults to Browser, Terminal, Files and Screenshot, and every slot can be changed in its settings panel. **Settings → Themes / Plugins** and **Agents → installed clients** open circular submenus in the same wheel. Launches use existing Omarchy terminal and application launchers. Orb runs inside Quattro's existing shell, with its active colours, font sizing and reduced-motion setting.
 
+![Orb with eight configured slots and a selected Browser action](preview.png)
+
+Real XPS capture of a customized eight-slot wheel. The default installation starts with six. [Capture provenance](docs/PREVIEW.json).
+
 ## Install the prototype
 
 From this checkout, one command:
@@ -22,7 +26,7 @@ Or clone the feature branch first:
 git clone --branch feature/shortcut-wheel https://github.com/tcballard/omarchy-plugin-orb.git && cd omarchy-plugin-orb && ./install
 ```
 
-The installer uses `omarchy plugin add "$PWD" --enable --yes`, a normal Git-based plugin installation. It checks live keybindings before adding the shortcut, backs up the affected Lua files, and preserves unrelated settings. No sudo or package installation. Quattro’s rescan can retain cached QML on this development build; if an update still shows the old UI, run `omarchy restart shell` (the bar briefly reloads). The installed checkout tracks this local source repository; commit changes and rerun `./install` to update it. Main remains the starter until this branch is merged. The feature branch is currently local and has not been pushed; the remote clone command becomes available after pushing.
+The installer uses `omarchy plugin add "$PWD" --enable --yes`, a normal Git-based plugin installation. It checks live keybindings before adding the shortcut, backs up the affected Lua files, and preserves unrelated settings. No sudo or package installation. Quattro’s rescan can retain cached QML on this development build; if an update still shows the old UI, run `omarchy restart shell` (the bar briefly reloads). The installed checkout tracks this local source repository. To update, run `git pull --ff-only` in the source checkout, then `./install`. Development changes must be committed before installing. The feature branch is available on GitHub; `main` remains the starter until the candidate PR is merged.
 
 Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the normal Omarchy launchers, Bash, Git, jq and libnotify. Node and a compiler are only development dependencies.
 
@@ -30,9 +34,9 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 
 - Optional **right-click on empty desktop** also opens Orb. This is enabled on this XPS; applications retain their context menus. Super+Alt+O remains available.
 - Hover a sector and left-click to launch. The centre logo glows on hover; click it to open Orb’s compact settings panel. In a submenu, the centre goes back.
-- Arrow keys or Tab/Shift+Tab cycle; 1–6 select; Enter launches. Home selects the centre button; Enter opens Orb settings (or goes back in a submenu). In settings, use **Slots** to choose each position’s shortcut or installed app. Six slots are the default; **Add slot** expands the wheel to seven or eight. Remove a slot with **×** (or Delete on the selected row) to return to six; search for **Postcard** to use its editor. **Appearance** controls wheel size and opening animation. Press Save to apply; Cancel/Escape discards changes. Tab moves between controls, arrows adjust size or browse search results, Enter chooses, and Ctrl+S saves. Escape in search returns to the slot list.
+- Arrow keys or Tab/Shift+Tab cycle; 1–8 select an available slot; Enter launches. Home selects the centre button; Enter opens Orb settings (or goes back in a submenu). In settings, use **Slots** to choose each position’s shortcut or installed app. Six slots are the default; **Add slot** expands the wheel to seven or eight. Remove a slot with **×** (or Delete on the selected row) to return to six; search for **Postcard** to use its editor. **Appearance** controls wheel size and opening animation. Press Save to apply; Cancel/Escape discards changes. Tab moves between controls, arrows adjust size or browse search results, Enter chooses, and Ctrl+S saves. Escape in search returns to the slot list.
 - Escape/Left/Backspace or the centre button returns from a submenu. Escape on the wheel, outside click, or the summon shortcut again dismisses.
-- Sectors show centred icons at every wheel size. The full hovered or keyboard-selected action name appears beneath Orb, including in submenus.
+- Sectors show centred icons at every wheel size. The full hovered or keyboard-selected action name appears beneath Orb, including in submenus. Its text and pill grow with the wheel, retaining a readable minimum at small sizes.
 - The wheel and keyboard hint stay clear of monitor edges and reserved bar space.
 - Submenus with more than six actions use footer arrows, scrolling or Page Up/Down.
 - **Make something cool** is an optional slot: search for it in Slots to add a circular **New theme / New plugin / New app** menu. Selecting a starter opens your default Omarchy agent with the same prompt used by the native Agents panel.
@@ -57,6 +61,12 @@ Six to eight configurable top-level entries with one submenu level. The panel do
 Codex, Claude and Grok use the product marks bundled with Omarchy’s agents panel, with contrasting variants for light and dark themes. [Asset provenance](CREDITS.md#agent-marks).
 
 No release or marketplace listing has been published.
+
+Orb itself makes no network requests and requires no authentication. Applications and agents you launch can use their own network connections and accounts. Agent discovery reads installed executables and, when present, the local mise inventory; it does not install agents. Runtime helpers require the normal Omarchy launchers, Bash, jq and standard system utilities. The plugin reads the pointer position with `hyprctl` and starts the selected application or agent after dismissing the wheel.
+
+Installation writes the plugin checkout, `~/.config/omarchy/orb.json`, `~/.config/hypr/orb.lua`, one owned include in `bindings.lua`, and Hyprland backup directories. The supported plugin manager also records enablement in shell configuration. Removal retains the Orb configuration, source checkout and backup directories. Custom command arguments in `orb.json` are trusted local configuration.
+
+Report problems through [GitHub issues](https://github.com/tcballard/omarchy-plugin-orb/issues), including your Omarchy version and reproduction steps. See [security reporting](SECURITY.md) for sensitive reports and [v0.1.0 preparation](docs/RELEASE.md) for release gates.
 
 ## Licence
 
