@@ -3,13 +3,13 @@
   "templateVersion": "0.1.0",
   "kind": "plugin",
   "owner": "tcballard",
-  "repo": "omarchy-plugin-template",
-  "slug": "omarchy-plugin-starter",
-  "name": "Omarchy Plugin Starter",
+  "repo": "omarchy-plugin-orb",
+  "slug": "omarchy-plugin-orb",
+  "name": "Orb",
   "author": "Tom Ballard",
-  "id": "io.github.tcballard.plugin_starter",
-  "description": "A small Quattro bar widget to extend into your own plugin.",
+  "id": "io.github.tcballard.orb",
+  "description": "Six everyday shortcuts, one pointer-centred wheel.",
   "year": "2026",
   "inspiration": "",
-  "initialized": false
+  "initialized": true
 }

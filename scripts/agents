@@ -1,0 +1,52 @@
+#!/bin/bash
+# Read-only discovery. Installer stubs are not installed agents.
+set -euo pipefail
+script_dir=$(dirname -- "$(readlink -f -- "$0")")
+install_bases=()
+if command -v mise >/dev/null; then
+  installed=$(mise ls --installed --json) || exit 1
+  mapfile -t install_bases < <(jq -r '[.[][]] | sort_by(.active // false) | reverse | .[].install_path' <<< "$installed")
+fi
+resolve() {
+  local executable=$1 tool=$2 candidate base
+  # Prefer real user/system executables over mise's first-run installers.
+  while IFS= read -r candidate; do
+    [[ $candidate != */mise/shims/* && $candidate != */command-wrappers/* ]] || continue
+    if [[ -f $candidate ]] && grep -Iq . "$candidate" && grep -Eq 'mise use -g|omarchy-install-.*--now' "$candidate"; then continue; fi
+    [[ -x $candidate ]] && { printf '%s\n' "$candidate"; return; }
+  done < <(type -aP "$executable" 2>/dev/null || true)
+  for base in "${install_bases[@]}"; do
+    for candidate in "$base/bin/$executable" "$base/$executable"; do
+      [[ ! -x $candidate ]] || { printf '%s\n' "$candidate"; return; }
+    done
+  done
+  return 1
+}
+rows=()
+while IFS='|' read -r executable label tool; do
+  if [[ ${1:-} == --resolve && ${2:-} != "$executable" ]]; then continue; fi
+  if binary=$(resolve "$executable" "$tool"); then
+    if [[ ${1:-} == --resolve ]]; then printf '%s\n' "$binary"; exit 0; fi
+    icon=agents
+    case "$executable" in claude|codex|grok) icon=$executable ;; esac
+    rows+=("$(jq -cn --arg label "$label" --arg icon "$icon" --arg helper "$script_dir/agent" --arg id "$executable" '{label:$label,icon:$icon,command:["omarchy","launch","tui","--app-id=org.omarchy.agent",$helper,$id]}')")
+  fi
+done <<'CATALOG'
+claude|Claude Code|claude
+codex|Codex|codex
+grok|Grok|grok
+opencode|OpenCode|opencode
+pi|Pi|pi
+omp|Oh My Pi|github:can1357/oh-my-pi
+ori|Ori|github:OpenRouterLabs/ori-releases
+agy|Antigravity|antigravity-cli
+copilot|GitHub Copilot|copilot
+crush|Crush|crush
+cursor-agent|Cursor CLI|cursor-agent
+muse|Muse Code|muse
+kimi|Kimi|npm:@moonshot-ai/kimi-code
+hermes|Hermes|hermes
+openclaw|OpenClaw|openclaw
+CATALOG
+[[ ${1:-} != --resolve ]] || exit 1
+printf '%s\n' "${rows[@]}" | jq -s .
