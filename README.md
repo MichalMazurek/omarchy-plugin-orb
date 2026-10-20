@@ -22,13 +22,13 @@ From this checkout, one command:
 ./install
 ```
 
-Or clone the feature branch first:
+Or clone the repository first:
 
 ```bash
-git clone --branch feature/shortcut-wheel https://github.com/tcballard/omarchy-plugin-orb.git && cd omarchy-plugin-orb && ./install
+git clone --branch main https://github.com/tcballard/omarchy-plugin-orb.git && cd omarchy-plugin-orb && ./install
 ```
 
-The installer uses `omarchy plugin add "$PWD" --enable --yes`, a normal Git-based plugin installation. It checks live keybindings before adding the shortcut, backs up the affected Lua files, and preserves unrelated settings. No sudo or package installation. Quattro’s rescan can retain cached QML on this development build; if an update still shows the old UI, run `omarchy restart shell` (the bar briefly reloads). The installed checkout tracks this local source repository. To update, run `git pull --ff-only` in the source checkout, then `./install`. Development changes must be committed before installing. The feature branch is available on GitHub; `main` remains the starter until the candidate PR is merged.
+The installer uses `omarchy plugin add "$PWD" --enable --yes`, a normal Git-based plugin installation. It checks live keybindings before adding the shortcut, backs up the affected Lua files, and preserves unrelated settings. Quattro’s rescan can retain cached QML on this development build; if an update still shows the old UI, run `omarchy restart shell` (the bar briefly reloads). The installed checkout tracks this local source repository. To update, run `git pull --ff-only` in the source checkout, then `./install`. Development changes must be committed before installing.
 
 Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the normal Omarchy launchers, Bash, Git, jq and libnotify. Node and a compiler are only development dependencies.
 
@@ -53,6 +53,14 @@ omarchy-shell io.github.tcballard.orb status
 ```
 
 Remove from the source checkout with `./uninstall`. It removes this plugin and its shortcut, preserving `orb.json` and source. Removing through Omarchy alone leaves the separately installed shortcut; use the script for complete removal.
+
+The standard plugin-manager command removes the plugin checkout and enablement only:
+
+```bash
+omarchy plugin remove io.github.tcballard.orb --yes
+```
+
+If you used `./install`, run `./uninstall` as well to remove its shortcut module and owned include. Your Orb settings and unrelated configuration are retained.
 
 ## Verification and limits
 
