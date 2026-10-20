@@ -1,8 +1,8 @@
 {
   "status": "pending-live",
   "version": "0.1.1",
-  "input_commit": "554bb5e4a72e00af28caa7a602f6e421bf095a01",
-  "date": "2026-10-20T01:37:56.249405+00:00",
+  "input_commit": "ec3d6e752ed3240dcc7bc168cd011a1aeefcf0b2",
+  "date": "2026-10-20T01:43:26.224174+00:00",
   "platform": "Portable Linux workspace; no running Omarchy/Hyprland desktop",
   "commands": [
     "./tests/run",
@@ -15,7 +15,7 @@
     {
       "name": "26 Node tests plus geometry/configuration and Bash checks",
       "pass": true,
-      "scope": "Actual setup scripts with isolated command fixtures and actual Lua lifecycle execution; no live desktop claim"
+      "scope": "Actual setup scripts with isolated command fixtures and actual Lua lifecycle execution; no live desktop claim; archive fixtures also reject missing and mismatched per-commit limited-release authorization."
     },
     {
       "name": "Qt QML parser and current official manifest validator",
@@ -415,5 +415,14 @@
         ]
       }
     }
+  },
+  "native_runtime_commit": "554bb5e4a72e00af28caa7a602f6e421bf095a01",
+  "release_authorization": {
+    "actor": "Tom Ballard",
+    "version": "0.1.1",
+    "input_commit": "ec3d6e752ed3240dcc7bc168cd011a1aeefcf0b2",
+    "statement": "Ok let\u2019s release v0.1.1 then.",
+    "date": "2026-10-20T01:43:26.224174+00:00",
+    "scope": "Owner authorized publication after being informed that portable checks pass and new XPS lifecycle verification is pending. This records publication authorization, not live acceptance."
   }
 }
