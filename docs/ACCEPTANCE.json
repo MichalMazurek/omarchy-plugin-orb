@@ -1,5 +1,5 @@
 {
-  "status": "pending-live",
+  "status": "owner-confirmed",
   "version": "0.1.1",
   "input_commit": "ec3d6e752ed3240dcc7bc168cd011a1aeefcf0b2",
   "date": "2026-10-20T01:43:26.224174+00:00",
@@ -26,6 +26,12 @@
       "name": "Strict publication/security static validation",
       "pass": true,
       "scope": "No errors or findings; capabilities require review; not a security audit"
+    },
+    {
+      "name": "Owner test of published v0.1.1",
+      "pass": true,
+      "evidence": "I\u2019ve tested v0.1.1 now myself and it works fine.",
+      "scope": "Owner-reported test of the published release on his XPS. Individual test steps and new instrumented logs were not supplied."
     }
   ],
   "upstream_contracts": {
@@ -33,12 +39,9 @@
     "hyprland": "12f242511a9c0fe8a884a9d90511bbbbe044f067"
   },
   "pending": [
-    "Native Git install/update, missing-config first enable and initial settings save on XPS",
-    "Shortcut and optional desktop binding, disable/re-enable, Hyprland reload, remove and saved-settings preservation on XPS",
-    "Source-bound results from node tests/lifecycle-live.cjs"
+    "Independent instrumented results from the native lifecycle harness; owner confirmation does not enumerate every install/update/disable/remove test step."
   ],
   "limitations": [
-    "Previous owner acceptance does not establish the new native-install lifecycle.",
     "Physical multi-monitor, hotplug, fractional scaling and other architectures remain unverified.",
     "Hard shell crashes may leave runtime bindings until shell restart or compositor reload."
   ],
@@ -424,5 +427,14 @@
     "statement": "Ok let\u2019s release v0.1.1 then.",
     "date": "2026-10-20T01:43:26.224174+00:00",
     "scope": "Owner authorized publication after being informed that portable checks pass and new XPS lifecycle verification is pending. This records publication authorization, not live acceptance."
+  },
+  "released_commit": "343207fe59ee08875b5f263337c72c8b957ce583",
+  "owner_confirmation": {
+    "name": "Tom Ballard",
+    "date": "2026-10-20T01:51:29.636885+00:00",
+    "version": "0.1.1",
+    "tested_source": "343207fe59ee08875b5f263337c72c8b957ce583",
+    "statement": "I\u2019ve tested v0.1.1 now myself and it works fine.",
+    "scope": "Owner-reported test of the published release on his XPS. Individual test steps and new instrumented logs were not supplied."
   }
 }

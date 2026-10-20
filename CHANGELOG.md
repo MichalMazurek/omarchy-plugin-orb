@@ -8,7 +8,7 @@
 - Show setup failures and Retry inside Orb; preserve conflicting user shortcuts.
 - Migrate unchanged v0.1.0 installer files with backups and rollback; preserve modified files.
 
-Portable lifecycle and migration fixtures, Qt QML parsing and the upstream manifest validator pass. Released with owner authorization while new live XPS lifecycle verification remains outstanding; v0.1.0 acceptance is retained as historical evidence.
+Portable lifecycle and migration fixtures, Qt QML parsing and the upstream manifest validator pass. Tom subsequently tested v0.1.1 on his XPS and confirmed it works. This is owner-reported acceptance; the previous automated and v0.1.0 evidence remain separately recorded.
 
 ## 0.1.0 — 2026-10-19
 

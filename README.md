@@ -68,7 +68,7 @@ Six to eight configurable top-level entries with one submenu level. The panel do
 
 Codex, Claude and Grok use the product marks bundled with Omarchy’s agents panel, with contrasting variants for light and dark themes. [Asset provenance](CREDITS.md#agent-marks).
 
-Version 0.1.1 fixes native installation. Portable lifecycle fixtures, QML parsing and the upstream manifest validator pass. Live XPS verification of the new lifecycle remains outstanding; the owner authorized this release with that limitation documented. Version 0.1.0’s owner acceptance applies to the previous installer flow. Marketplace snapshot updates require maintainer approval.
+Version 0.1.1 fixes native installation. Portable lifecycle fixtures, QML parsing and the upstream manifest validator pass. Tom has tested v0.1.1 on his XPS and confirmed that it works. This is owner-reported acceptance; new instrumented lifecycle logs were not collected. Version 0.1.0’s owner acceptance applies to the previous installer flow. Marketplace snapshot updates require maintainer approval.
 
 Orb itself makes no network requests and requires no authentication. Applications and agents you launch can use their own network connections and accounts. Agent discovery reads installed executables and, when present, the local mise inventory; it does not install agents. Runtime helpers require the normal Omarchy launchers, Bash, jq and standard system utilities. The plugin reads the pointer position with `hyprctl` and starts the selected application or agent after dismissing the wheel.
 
