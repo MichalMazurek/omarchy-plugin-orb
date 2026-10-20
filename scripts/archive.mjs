@@ -15,7 +15,16 @@ try {
   if(git('cat-file','-t',tag)!=='tag')throw Error('Release requires an annotated tag');
   if(git('rev-parse',`${tag}^{commit}`)!==git('rev-parse','HEAD'))throw Error('Release tag must resolve to this exact commit');
   const a=readJSON(path.join(root,'docs/ACCEPTANCE.json'));
-  if(a.status!=='passed'||!a.platform||!a.date||!Array.isArray(a.commands)||!a.commands.length||!Array.isArray(a.results)||!a.results.length||!/^[a-f0-9]{40}$/.test(a.input_commit||''))throw Error('Record actual acceptance evidence before release');
+  // An owner may release with honestly documented live gaps. This requires both
+  // a source-bound authorization record and an explicit per-commit dispatch flag.
+  const authorizedPending=a.status==='pending-live'
+    && process.env.RELEASE_ACCEPT_PENDING_LIVE===git('rev-parse','HEAD')
+    && a.version===tag.slice(1)
+    && a.release_authorization?.version===a.version
+    && a.release_authorization?.input_commit===a.input_commit
+    && a.release_authorization?.actor && a.release_authorization?.statement
+    && Array.isArray(a.pending) && a.pending.length>0;
+  if((a.status!=='passed'&&!authorizedPending)||!a.platform||!a.date||!Array.isArray(a.commands)||!a.commands.length||!Array.isArray(a.results)||!a.results.length||!/^[a-f0-9]{40}$/.test(a.input_commit||''))throw Error('Record actual acceptance evidence before release');
   // Evidence may be recorded in a later docs-only commit, never after a runtime change.
   git('merge-base','--is-ancestor',a.input_commit,'HEAD');
   const changed=git('diff','--name-only',a.input_commit,'HEAD').split('\n').filter(Boolean);
