@@ -3,11 +3,23 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing accepted tag (for example v0.1.0)
+        description: Version tag to create on accepted main (for example v0.1.1)
         required: true
         type: string
+      expected_commit:
+        description: Exact main commit authorized for release
+        required: true
+        type: string
+      allow_pending_live:
+        description: Owner explicitly authorized publication with documented pending live checks
+        required: true
+        default: false
+        type: boolean
 permissions:
   contents: read
+concurrency:
+  group: source-release
+  cancel-in-progress: false
 jobs:
   source:
     runs-on: ubuntu-24.04
@@ -16,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ inputs.expected_commit }}
           fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
@@ -24,9 +36,32 @@ jobs:
       - name: Install Lua for binding lifecycle fixtures
         run: sudo apt-get update && sudo apt-get install -y lua5.4
       - run: ./tests/run
+      - name: Create immutable annotated tag on the authorized main commit
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit }}
+          DISPATCH_BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          [[ $DISPATCH_BRANCH == main ]]
+          [[ $EXPECTED_COMMIT =~ ^[a-f0-9]{40}$ ]]
+          [[ $RELEASE_TAG =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ $(git rev-parse HEAD) == "$EXPECTED_COMMIT" ]]
+          [[ $(git ls-remote origin refs/heads/main | cut -f1) == "$EXPECTED_COMMIT" ]]
+          [[ $(cat VERSION) == "${RELEASE_TAG#v}" ]]
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            [[ $(git cat-file -t "$RELEASE_TAG") == tag ]]
+            [[ $(git rev-parse "$RELEASE_TAG^{commit}") == "$EXPECTED_COMMIT" ]]
+          else
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git tag -a "$RELEASE_TAG" "$EXPECTED_COMMIT" -m "Orb $RELEASE_TAG"
+            git push origin "refs/tags/$RELEASE_TAG"
+          fi
       - run: node scripts/archive.mjs
         env:
           RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_ACCEPT_PENDING_LIVE: ${{ inputs.allow_pending_live && inputs.expected_commit || '' }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: source-release
@@ -35,4 +70,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
-        run: gh release create "$RELEASE_TAG" dist/* --verify-tag --draft --title "$RELEASE_TAG" --notes "Source release. Review acceptance evidence and complete the release notes before publishing."
+        run: gh release create "$RELEASE_TAG" dist/* --verify-tag --draft --title "Orb $RELEASE_TAG" --notes-file docs/RELEASE-NOTES.md

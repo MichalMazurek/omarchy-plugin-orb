@@ -34,6 +34,8 @@ Remove:
 omarchy plugin remove io.github.tcballard.orb
 ```
 
+For an existing v0.1.0 install that tracks a local source checkout, remove and add Orb once through the normal plugin manager to switch it to this public repository; saved settings are retained.
+
 Disabling or removing Orb releases its runtime bindings; your Orb settings remain. The old installer’s unmodified binding module is migrated automatically, with backups. User-modified legacy modules are preserved and reported for review.
 
 Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the normal Omarchy launchers, Bash, Git, jq and libnotify. Node and a compiler are only development dependencies.
@@ -66,7 +68,7 @@ Six to eight configurable top-level entries with one submenu level. The panel do
 
 Codex, Claude and Grok use the product marks bundled with Omarchy’s agents panel, with contrasting variants for light and dark themes. [Asset provenance](CREDITS.md#agent-marks).
 
-Version 0.1.1 fixes native installation. Its new lifecycle has portable fixture coverage; live XPS acceptance is pending. Version 0.1.0’s owner acceptance applies to the previous installer flow. Marketplace listing requires maintainer approval.
+Version 0.1.1 fixes native installation. Portable lifecycle fixtures, QML parsing and the upstream manifest validator pass. Live XPS verification of the new lifecycle remains outstanding; the owner authorized this release with that limitation documented. Version 0.1.0’s owner acceptance applies to the previous installer flow. Marketplace snapshot updates require maintainer approval.
 
 Orb itself makes no network requests and requires no authentication. Applications and agents you launch can use their own network connections and accounts. Agent discovery reads installed executables and, when present, the local mise inventory; it does not install agents. Runtime helpers require the normal Omarchy launchers, Bash, jq and standard system utilities. The plugin reads the pointer position with `hyprctl` and starts the selected application or agent after dismissing the wheel.
 

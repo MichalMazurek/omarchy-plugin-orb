@@ -42,6 +42,14 @@ test('release source preserves checks and binds manifests, SBOM and checksums',(
     run(extracted,process.execPath,['scripts/check.mjs']);run(extracted,process.execPath,['tests/model.cjs']);
     const denied=(releaseTag,pattern)=>{const r=spawnSync(process.execPath,['scripts/archive.mjs'],{cwd:repo,encoding:'utf8',env:{...process.env,RELEASE_TAG:releaseTag}});assert.ifError(r.error);assert.notEqual(r.status,0);assert.match(r.stderr+r.stdout,pattern);};
     git('tag','v9.9.9');denied('v9.9.9',/annotated tag/);
+    const pending={status:'pending-live',version,input_commit:input,platform:'Synthetic fixture; no desktop acceptance',date:'2026-10-20',commands:['fixture'],results:['portable fixture'],pending:['live desktop'],release_authorization:{version,input_commit:input,actor:'Fixture owner',statement:'Release with documented live gaps'}};
+    fs.writeFileSync(path.join(repo,'docs/ACCEPTANCE.json'),JSON.stringify(pending));
+    git('add','docs/ACCEPTANCE.json');git('commit','-qm','Synthetic limited release authorization');
+    git('tag','-d',tag);git('tag','-a',tag,'-m','Temporary authorized fixture tag');
+    denied(tag,/Record actual acceptance/);
+    const wrong=spawnSync(process.execPath,['scripts/archive.mjs'],{cwd:repo,encoding:'utf8',env:{...process.env,RELEASE_TAG:tag,RELEASE_ACCEPT_PENDING_LIVE:input}});
+    assert.notEqual(wrong.status,0);assert.match(wrong.stderr,/Record actual acceptance/);
+    run(repo,process.execPath,['scripts/archive.mjs'],{RELEASE_TAG:tag,RELEASE_ACCEPT_PENDING_LIVE:git('rev-parse','HEAD')});
     fs.appendFileSync(path.join(repo,'README.md'),'\nDirty fixture\n');denied(tag,/clean checkout/);
   }finally{fs.rmSync(temp,{recursive:true,force:true});}
 });

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.1 — native installation fix
+## 0.1.1 — 2026-10-19
 
 - Install, update and remove through the normal Omarchy plugin commands against `main`.
 - Create missing settings on enable while retaining existing layouts and custom metadata.
@@ -8,7 +8,7 @@
 - Show setup failures and Retry inside Orb; preserve conflicting user shortcuts.
 - Migrate unchanged v0.1.0 installer files with backups and rollback; preserve modified files.
 
-Portable lifecycle and migration fixtures pass. New live XPS lifecycle acceptance remains pending; v0.1.0 acceptance is retained as historical evidence.
+Portable lifecycle and migration fixtures, Qt QML parsing and the upstream manifest validator pass. Released with owner authorization while new live XPS lifecycle verification remains outstanding; v0.1.0 acceptance is retained as historical evidence.
 
 ## 0.1.0 — 2026-10-19
 
