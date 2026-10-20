@@ -13,6 +13,7 @@ FocusScope {
     property string shortcut: ""
     property string error: ""
     property bool busy: false
+    property bool setupFailed: false
     property int tab: 0
     property int cursor: 2
     property int editingSlot: -1
@@ -27,6 +28,7 @@ FocusScope {
     onCursorChanged: if (tab === 0 && cursor >= 2 && cursor < actions.length + 2) slotList.positionViewAtIndex(cursor - 2, ListView.Contain)
     signal saveRequested()
     signal canceled()
+    signal retrySetup()
     implicitHeight: content.height + Commons.Style.space(36)
     height: implicitHeight
 
@@ -193,6 +195,12 @@ FocusScope {
                     onClicked: { panel.tab = index; panel.cursor = 2; panel.forceActiveFocus(); }
                 }
             }
+        }
+        Button {
+            visible: panel.setupFailed
+            width: parent.width; text: "Retry shortcut setup"; bordered: true
+            foreground: Commons.Color.menu.text; fontFamily: Commons.Style.font.menuFamily
+            onClicked: panel.retrySetup()
         }
         ListView {
             id: slotList

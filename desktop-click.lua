@@ -9,7 +9,7 @@ local function axis(value, name, index)
   if type(value) ~= "table" then return nil end
   return value[name] or value[index]
 end
-hl.bind("mouse:273", function()
+return hl.bind("mouse:273", function()
   local pass = { ok = false }
   local p = hl.get_cursor_pos()
   local monitor = hl.get_monitor_at_cursor()

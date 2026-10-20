@@ -6,7 +6,7 @@
 
 Launch apps, switch themes and open your installed coding agents from a wheel near your pointer. Press **Super+Alt+O**, then click an icon or select it with the keyboard and press Enter. Choose six to eight shortcuts in Orb’s settings; the wheel follows your Omarchy shell theme.
 
-**Prototype for current Omarchy Quattro.** [Install and update](#install-the-prototype).
+**For current Omarchy Quattro.** [Install and update](#install).
 
 ![Orb with eight configured slots and a selected Browser action](preview.png)
 
@@ -14,21 +14,27 @@ Real XPS capture with eight shortcuts; six by default. [Capture details](docs/PR
 
 Inspired by **Tangerine for Mac**. Original implementation built from Tom Ballard’s [Omarchy plugin starter](https://github.com/tcballard/build-omarchy-plugins). [Credits](CREDITS.md).
 
-## Install the prototype
-
-From this checkout, one command:
+## Install
 
 ```bash
-./install
+omarchy plugin add https://github.com/tcballard/omarchy-plugin-orb.git --enable
 ```
 
-Or clone the repository first:
+Installs from `main`. Orb creates its settings on first enable and registers **Super+Alt+O** while enabled. No separate installer or source checkout is needed. Existing settings are retained. A conflicting shortcut opens an in-app error with a retry button and leaves the existing binding alone.
+
+Update:
 
 ```bash
-git clone --branch main https://github.com/tcballard/omarchy-plugin-orb.git && cd omarchy-plugin-orb && ./install
+omarchy plugin update io.github.tcballard.orb
 ```
 
-The installer uses `omarchy plugin add "$PWD" --enable --yes`, a normal Git-based plugin installation. It checks live keybindings before adding the shortcut, backs up the affected Lua files, and preserves unrelated settings. Quattro’s rescan can retain cached QML on this development build; if an update still shows the old UI, run `omarchy restart shell` (the bar briefly reloads). The installed checkout tracks this local source repository. To update, run `git pull --ff-only` in the source checkout, then `./install`. Development changes must be committed before installing.
+Remove:
+
+```bash
+omarchy plugin remove io.github.tcballard.orb
+```
+
+Disabling or removing Orb releases its runtime bindings; your Orb settings remain. The old installer’s unmodified binding module is migrated automatically, with backups. User-modified legacy modules are preserved and reported for review.
 
 Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the normal Omarchy launchers, Bash, Git, jq and libnotify. Node and a compiler are only development dependencies.
 
@@ -44,23 +50,13 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 - **Make something cool** is an optional slot: search for it in Slots to add a circular **New theme / New plugin / New app** menu. Selecting a starter opens your default Omarchy agent with the same prompt used by the native Agents panel.
 - Opening animates for 190ms; system reduced motion is respected.
 
-For advanced custom commands, edit `~/.config/omarchy/orb.json` for six to eight top-level labels, icons, command argument arrays, one-level `children` menus, an installed-agent menu (`"menu": "agents"`), diameter, animation and shortcut. The default diameter is 240 theme units, currently 280px on the XPS. See [the example](config.example.json). The picker offers the standard shortcuts, Settings and Agents circular menus, Themes, Plugins, Postcard (requires the Postcard plugin), and installed applications from Quattro’s app library. App choices store a `desktopId` and launch through that same library; icons follow the installed application. Commands run without shell-string evaluation. Set `"desktopRightClick": true` to enable desktop-only right-click (then rerun `./install`). It uses Hyprland’s auto-consuming binding: app, panel and widget clicks pass through. Desktop right-click now opens Orb in place of the wallpaper’s right-double-click theme gesture; Themes remains available as a slot choice. Conservative panel bounds, including the dock’s transparent area, are excluded. Other changes load live; **rerun `./install` after changing the shortcut**. Invalid configuration retains the last valid actions and shows an error hint.
+For advanced custom commands, edit `~/.config/omarchy/orb.json` for six to eight top-level labels, icons, command argument arrays, one-level `children` menus, an installed-agent menu (`"menu": "agents"`), diameter, animation and shortcut. The default diameter is 240 theme units, currently 280px on the XPS. See [the example](config.example.json). The picker offers the standard shortcuts, Settings and Agents circular menus, Themes, Plugins, Postcard (requires the Postcard plugin), and installed applications from Quattro’s app library. App choices store a `desktopId` and launch through that same library; icons follow the installed application. Commands run without shell-string evaluation. Set `"desktopRightClick": true` to enable desktop-only right-click . It uses Hyprland’s auto-consuming binding: app, panel and widget clicks pass through. Desktop right-click now opens Orb in place of the wallpaper’s right-double-click theme gesture; Themes remains available as a slot choice. Conservative panel bounds, including the dock’s transparent area, are excluded. Other changes load live; shortcut and desktop activation changes also apply live. Invalid configuration retains the last valid actions and shows an error hint.
 
 ```bash
 omarchy-shell shell toggle io.github.tcballard.orb
 omarchy-shell shell hide io.github.tcballard.orb
 omarchy-shell io.github.tcballard.orb status
 ```
-
-Remove from the source checkout with `./uninstall`. It removes this plugin and its shortcut, preserving `orb.json` and source. Removing through Omarchy alone leaves the separately installed shortcut; use the script for complete removal.
-
-The standard plugin-manager command removes the plugin checkout and enablement only:
-
-```bash
-omarchy plugin remove io.github.tcballard.orb --yes
-```
-
-If you used `./install`, run `./uninstall` as well to remove its shortcut module and owned include. Your Orb settings and unrelated configuration are retained.
 
 ## Verification and limits
 
@@ -70,13 +66,13 @@ Six to eight configurable top-level entries with one submenu level. The panel do
 
 Codex, Claude and Grok use the product marks bundled with Omarchy’s agents panel, with contrasting variants for light and dark themes. [Asset provenance](CREDITS.md#agent-marks).
 
-Version 0.1.0 is prepared for publication; marketplace listing requires maintainer approval.
+Version 0.1.1 fixes native installation. Its new lifecycle has portable fixture coverage; live XPS acceptance is pending. Version 0.1.0’s owner acceptance applies to the previous installer flow. Marketplace listing requires maintainer approval.
 
 Orb itself makes no network requests and requires no authentication. Applications and agents you launch can use their own network connections and accounts. Agent discovery reads installed executables and, when present, the local mise inventory; it does not install agents. Runtime helpers require the normal Omarchy launchers, Bash, jq and standard system utilities. The plugin reads the pointer position with `hyprctl` and starts the selected application or agent after dismissing the wheel.
 
-Installation writes the plugin checkout, `~/.config/omarchy/orb.json`, `~/.config/hypr/orb.lua`, one owned include in `bindings.lua`, and Hyprland backup directories. The supported plugin manager also records enablement in shell configuration. Removal retains the Orb configuration, source checkout and backup directories. Custom command arguments in `orb.json` are trusted local configuration.
+Installation writes the plugin checkout through Omarchy and creates `~/.config/omarchy/orb.json` only if missing, plus an Orb setup lock. Fresh installations do not write Hyprland configuration files. Migration of the old installer removes only its unchanged module and exact owned include, with backups. The plugin manager records enablement in shell configuration. Removal retains Orb settings and migration backups. Runtime bindings are recreated after Hyprland reload; restarting the shell recovers them after a shell crash. Custom command arguments in `orb.json` are trusted local configuration.
 
-Report problems through [GitHub issues](https://github.com/tcballard/omarchy-plugin-orb/issues), including your Omarchy version and reproduction steps. See [security reporting](SECURITY.md) for sensitive reports and [v0.1.0 preparation](docs/RELEASE.md) for release gates.
+Report problems through [GitHub issues](https://github.com/tcballard/omarchy-plugin-orb/issues), including your Omarchy version and reproduction steps. See [security reporting](SECURITY.md) for sensitive reports and [release evidence](docs/RELEASE.md) for release gates.
 
 ## Licence
 

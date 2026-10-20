@@ -16,9 +16,11 @@ _No response_
 
 ### Maintainer notes
 
-Orb is a Quattro shortcut wheel with six to eight configurable slots, circular Settings/Agents menus, and mouse and keyboard activation. Plugin ID: `io.github.tcballard.orb`; version: `0.1.0`.
+Orb is a Quattro shortcut wheel with six to eight configurable slots, circular Settings/Agents menus, and mouse and keyboard activation. Plugin ID: `io.github.tcballard.orb`; version: `0.1.1`.
 
-Use the repository's `./install` to register Orb and its Super+Alt+O shortcut; `./uninstall` also removes the owned Hyprland module/include and preserves Orb settings. Standard plugin-manager installation alone does not install that shortcut. Optional desktop right-click is off by default. Please review this installation requirement when choosing the listing's installation presentation.
+Native installation is `omarchy plugin add https://github.com/tcballard/omarchy-plugin-orb.git --enable`, from the default `main` branch. Standard plugin update/remove commands are supported. No separate installer is required. Orb initializes missing settings and registers runtime bindings while enabled; optional desktop right-click remains off by default. Unmodified v0.1.0 installer files migrate with backups. User-modified legacy files and conflicting shortcuts remain untouched.
+
+The native install correction changes runtime behavior, so v0.1.0’s owner acceptance is historical. Portable lifecycle fixtures and QML parsing pass; new live XPS install/update/disable/remove acceptance is pending. Please hold listing approval until that evidence is recorded.
 
 Requires current Quattro APIs, the normal Omarchy launchers, Bash, Git, jq and libnotify. No compiled helper or package installation. Orb itself makes no network or authentication requests. It reads local pointer/configuration/agent inventory and launches user-selected applications or agents. Optional agents use their own accounts; their default selection is unchanged.
 

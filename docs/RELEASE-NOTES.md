@@ -1,23 +1,11 @@
-# Orb v0.1.0
+# Orb v0.1.1 — native installation fix
 
-Launch apps, change themes and open installed coding agents from a shortcut wheel near your pointer.
-
-- Six configurable slots, expandable to eight, with an installed-app picker.
-- Circular Settings and Agents menus, plus optional theme, plugin and app creation prompts through your default Omarchy agent.
-- Mouse and keyboard selection, focus restoration, theme colours and captions that scale with the wheel.
-- Super+Alt+O activation and optional right-click on empty desktop.
-- Git-based installation, settings-preserving removal and rollback when shortcut installation fails.
-
-Install from a fresh directory:
+Install Orb directly from `main`:
 
 ```bash
-git clone --branch v0.1.0 https://github.com/tcballard/omarchy-plugin-orb.git && cd omarchy-plugin-orb && ./install
+omarchy plugin add https://github.com/tcballard/omarchy-plugin-orb.git --enable
 ```
 
-Press **Super+Alt+O** to open Orb and click its centre to configure it. Remove it from the source checkout with `./uninstall`.
+Orb initializes missing settings and owns Super+Alt+O and optional desktop activation while enabled. Existing layouts are retained. Standard plugin update and remove commands work without a source checkout or a second terminal step. Setup failures appear in Orb with Retry; conflicting user shortcuts stay untouched. Unmodified v0.1.0 installer files migrate automatically with backups.
 
-Requires the Quattro shell APIs documented in the README and the standard Omarchy launchers, Bash, Git, jq and libnotify. Optional integrations require their corresponding apps or plugins. Orb does not install agents or change the default agent.
-
-The owner confirmed final acceptance on the XPS on 2026-10-19, including native validation, the saved six-to-eight-to-six slot flow, physical shortcut/focus behaviour, light/dark captions and reinstall. Historical instrumented evidence covers a Dell XPS 9320 at 1920×1200, scale 1. Physical multi-monitor, hotplug, fractional scaling and other architectures remain unverified. The settings panel does not edit custom command arguments, submenu contents or the activation shortcut. See [acceptance evidence](https://github.com/tcballard/omarchy-plugin-orb/blob/v0.1.0/docs/ACCEPTANCE.json) for source identities and the distinction between owner-reported and automated results.
-
-Assets include a source archive, source/release manifests, an SPDX source-package inventory and SHA-256 checksums. Installation requires Git metadata; the tarball is not an installer. Third-party marks and screenshot provenance are documented in [CREDITS.md](https://github.com/tcballard/omarchy-plugin-orb/blob/v0.1.0/CREDITS.md).
+Portable tests cover initialization, conflicts, migration rollback, stale completions, repeated registration, compositor-state reset and owner-scoped cleanup. New live XPS lifecycle acceptance is pending. The previous owner acceptance remains evidence for v0.1.0 only; this candidate is not yet tagged or published.

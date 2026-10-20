@@ -1,6 +1,6 @@
 # Develop and verify Orb
 
-Portable checks (Node 22+, Bash, no npm dependencies):
+Portable checks (Node 22+, Bash, jq, Lua 5.4 or texlua; no npm dependencies):
 
 ```bash
 ./tests/run
@@ -8,7 +8,7 @@ Portable checks (Node 22+, Bash, no npm dependencies):
 
 This retains the starter identity/CI checks and adds geometry/config tests. On Omarchy, `./tests/native` also runs the installed manifest validator and Qt's QML parser. Parsing is not runtime verification.
 
-Install from a committed checkout with `./install`. After changes, commit and rerun it; let the shell finish reloading plugins before summoning. A rescan retained cached QML during live development on this build. If the old UI persists, `omarchy restart shell` loads the new runtime; this briefly reloads the bar.
+Install from main with `omarchy plugin add https://github.com/tcballard/omarchy-plugin-orb.git --enable`. For a committed development checkout, use the supported local Git URL with `omarchy plugin add "$PWD" --enable --yes`. Normal updates use `omarchy plugin update io.github.tcballard.orb`; remove with `omarchy plugin remove io.github.tcballard.orb`. The compatibility `./install` and `./uninstall` wrappers only forward to the native manager. No post-install terminal command is needed.
 
 The opt-in live harness controls the actual desktop. It saves/restores workspace, focused window and pointer, uses an empty named workspace, launches real actions and closes only newly created test windows:
 

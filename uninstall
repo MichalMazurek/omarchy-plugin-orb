@@ -1,24 +1,3 @@
 #!/bin/bash
 set -euo pipefail
-config_dir=${XDG_CONFIG_HOME:-$HOME/.config}
-bindings="$config_dir/hypr/bindings.lua"
-module="$config_dir/hypr/orb.lua"
-if [[ -e $module ]] && ! head -1 "$module" | grep -Fxq -- '-- Orb shortcut wheel: managed by omarchy-plugin-orb/install'; then
-  echo "Refusing to remove an unrecognized $module" >&2; exit 1
-fi
-backup=$(mktemp -d "$config_dir/hypr/.orb-uninstall.XXXXXXXX")
-[[ ! -f $bindings ]] || cp -p "$bindings" "$backup/bindings.lua"
-[[ ! -f $module ]] || cp -p "$module" "$backup/orb.lua"
-if [[ -d $HOME/.config/omarchy/plugins/io.github.tcballard.orb ]]; then
-  omarchy plugin remove io.github.tcballard.orb --yes
-fi
-if [[ -f $bindings ]]; then
-  sed '/^require("orb") -- Orb shortcut wheel$/d' "$bindings" > "$backup/new-bindings.lua"
-  cat "$backup/new-bindings.lua" > "$bindings"
-fi
-[[ ! -f $module ]] || printf '%s\n' '-- Orb removed; retained temporarily for Lua reload.' > "$module"
-hyprctl reload >/dev/null
-errors=$(hyprctl configerrors)
-[[ -z $errors ]] || { echo "$errors" >&2; echo "Backup: $backup" >&2; exit 1; }
-[[ ! -f $module ]] || rm -- "$module"
-printf 'Orb removed; orb.json and the source checkout are preserved.\nBackup: %s\n' "$backup"
+exec omarchy plugin remove io.github.tcballard.orb "$@"

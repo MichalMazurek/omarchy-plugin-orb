@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1 — native installation fix
+
+- Install, update and remove through the normal Omarchy plugin commands against `main`.
+- Create missing settings on enable while retaining existing layouts and custom metadata.
+- Own shortcut and optional desktop bindings for the enabled plugin’s lifetime, including compositor reload and unload cleanup.
+- Show setup failures and Retry inside Orb; preserve conflicting user shortcuts.
+- Migrate unchanged v0.1.0 installer files with backups and rollback; preserve modified files.
+
+Portable lifecycle and migration fixtures pass. New live XPS lifecycle acceptance remains pending; v0.1.0 acceptance is retained as historical evidence.
+
 ## 0.1.0 — 2026-10-19
 
 Orb brings a pointer-centred shortcut wheel to Omarchy's Quattro shell.

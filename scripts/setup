@@ -1,0 +1,129 @@
+#!/bin/bash
+# Called by the hosted menu, never by a plugin-manager hook. No shell config writes
+# on fresh installs. Lua bindings belong to this enabled menu's lifetime.
+set -euo pipefail
+repo=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+token=${1:?binding owner required}
+[[ $token =~ ^[0-9]+-[0-9]+$ ]] || exit 2
+config_dir=${XDG_CONFIG_HOME:-$HOME/.config}
+config="$config_dir/omarchy/orb.json"
+mkdir -p -- "$config_dir/omarchy"
+exec 9>"$config_dir/omarchy/.orb-setup.lock"
+flock -x 9
+if [[ ! -e $config ]]; then
+  tmp=$(mktemp "$config_dir/omarchy/.orb-init.XXXXXXXX")
+  trap 'rm -f -- "$tmp"' EXIT
+  cat -- "$repo/config.example.json" > "$tmp"
+  # Publish without replacing a file another process created in the meantime.
+  ln -- "$tmp" "$config" 2>/dev/null || [[ -f $config ]]
+  rm -f -- "$tmp"
+  trap - EXIT
+fi
+
+# Upgrade the exact v0.1.0 installer-owned files, keeping recoverable originals.
+# New native installations never create these files.
+module="$config_dir/hypr/orb.lua"
+bindings="$config_dir/hypr/bindings.lua"
+marker='-- Orb shortcut wheel: managed by omarchy-plugin-orb/install'
+if [[ -f $module ]] && [[ $(head -1 -- "$module") == "$marker" ]]; then
+  # A marker alone does not establish that an owner has left the file unchanged.
+  expected=$(mktemp)
+  { printf '%s\n' "$marker"; sed -n '2p' "$module"; } > "$expected"
+  if ! sed -n '2p' "$module" | grep -Eq '^o\.bind\("[A-Z0-9 +]+", "Orb shortcut wheel", \{ panel = "io\.github\.tcballard\.orb" \}\)$'; then
+    rm -- "$expected"; echo 'Modified legacy orb.lua was preserved; review it before migration.' >&2; exit 1
+  fi
+  if [[ $(wc -l < "$module") -gt 2 ]]; then sed 's/^return hl.bind/hl.bind/' "$repo/desktop-click.lua" >> "$expected"; fi
+  if ! cmp -s -- "$module" "$expected"; then
+    rm -- "$expected"; echo 'Modified legacy orb.lua was preserved; review it before migration.' >&2; exit 1
+  fi
+  rm -- "$expected"
+  [[ -z $(hyprctl configerrors) ]] || { echo 'Resolve existing Hyprland errors before migrating Orb.' >&2; exit 1; }
+  backup=$(mktemp -d "$config_dir/hypr/.orb-native-migration.XXXXXXXX")
+  cp -p -- "$module" "$backup/orb.lua"
+  [[ ! -f $bindings ]] || cp -p -- "$bindings" "$backup/bindings.lua"
+  if [[ -f $bindings ]]; then
+    sed '/^require("orb") -- Orb shortcut wheel$/d' "$bindings" > "$backup/new-bindings.lua"
+    cat -- "$backup/new-bindings.lua" > "$bindings"
+  fi
+  # Lua's require cache may survive reload; retain a harmless module until after it.
+  printf '%s\n' '-- Orb migrated to lifecycle-owned bindings.' > "$module"
+  errors=''
+  if ! hyprctl reload >/dev/null; then errors='Hyprland reload failed.'
+  elif ! errors=$(hyprctl configerrors); then errors='Could not check Hyprland configuration.'; fi
+  if [[ -n $errors ]]; then
+    cp -p -- "$backup/orb.lua" "$module"
+    if [[ -f $backup/bindings.lua ]]; then cp -p -- "$backup/bindings.lua" "$bindings"; fi
+    hyprctl reload >/dev/null || true
+    printf 'Orb migration failed: %s\nBackup: %s\n' "$errors" "$backup" >&2
+    exit 1
+  fi
+  rm -- "$module"
+fi
+
+# v0.1.0 cloned from a local source checkout. Once this exact plugin is loaded,
+# use its verified upstream for subsequent normal plugin-manager updates.
+if [[ -d $repo/.git ]]; then
+  origin=$(git -C "$repo" remote get-url origin)
+  if [[ -d $origin/.git ]]; then
+    upstream=$(git -C "$origin" remote get-url origin)
+    if [[ $upstream == https://github.com/tcballard/omarchy-plugin-orb.git ]]; then
+      git -C "$repo" remote set-url origin "$upstream"
+    fi
+  fi
+fi
+
+shortcut=$(jq -er '.shortcut // "SUPER + ALT + O"' "$config")
+IFS='+' read -ra parts <<< "$shortcut"
+mask=0 key='' canonical=''
+for part in "${parts[@]}"; do
+  part=${part//[[:space:]]/}; part=${part^^}
+  [[ -z $key ]] || { echo 'The key must be the final shortcut token.' >&2; exit 1; }
+  case "$part" in
+    SUPER) bit=64 ;; ALT) bit=8 ;; CTRL) bit=4 ;; SHIFT) bit=1 ;;
+    *) [[ $part =~ ^([A-Z0-9]|F[1-9]|F1[0-2]|SPACE)$ ]] || { echo 'Unsupported Orb shortcut.' >&2; exit 1; }; key=$part; bit=0 ;;
+  esac
+  if (( bit )); then
+    (( (mask & bit) == 0 )) || { echo 'Duplicate shortcut modifier.' >&2; exit 1; }
+    mask=$((mask | bit))
+  fi
+  canonical+="${canonical:+ + }$part"
+done
+[[ -n $key && $mask -ge 64 ]] || { echo 'Use a Super shortcut with one key.' >&2; exit 1; }
+desktop_click=$(jq -r '.desktopRightClick == true' "$config")
+binds=$(hyprctl binds -j)
+conflicts=$(jq --arg key "$key" --argjson mask "$mask" '[.[] | select((.key | ascii_upcase) == $key and .modmask == $mask and ((.description // "") | startswith("Orb shortcut wheel [orb:") | not))] | length' <<< "$binds")
+(( conflicts == 0 )) || { echo "Shortcut $canonical is already in use; existing bindings were preserved." >&2; exit 1; }
+if [[ $desktop_click == true ]]; then
+  conflicts=$(jq '[.[] | select(.key == "mouse:273" and .modmask == 0 and ((.description // "") | startswith("Orb on empty desktop [orb:") | not))] | length' <<< "$binds")
+  (( conflicts == 0 )) || { echo 'Desktop right-click is already bound; existing bindings were preserved.' >&2; exit 1; }
+fi
+# Only validated ASCII keys/tokens enter Lua. User commands/labels never do.
+code="local token = \"$token\"
+local r = rawget(_G, '__orb_native_bindings')
+if not r then r = { dead = {} }; _G.__orb_native_bindings = r end
+if r.dead[token] or (r.latest and r.latest > token) then return end
+r.latest = token
+local handles = {}
+local ok, failure = pcall(function()
+handles[1] = assert(hl.bind(\"$canonical\", function()
+  hl.exec_cmd('omarchy-shell shell toggle io.github.tcballard.orb')
+end, { description = 'Orb shortcut wheel [orb:' .. token .. ']' }))
+"
+if [[ $desktop_click == true ]]; then
+  code+=$'\nlocal function desktopBind()\n'
+  code+=$(sed "s/description = \"Orb on empty desktop\"/description = \"Orb on empty desktop [orb:$token]\"/" "$repo/desktop-click.lua")
+  code+=$'\nend\nhandles[2] = assert(desktopBind())\n'
+fi
+code+=$'\nend)\nif not ok then\n  for _, bind in ipairs(handles) do pcall(function() bind:remove() end) end\n  error(failure)\nend\nfor owner, previous in pairs(r) do\n  if type(previous) == "table" and owner ~= "dead" then\n    for _, bind in ipairs(previous) do pcall(function() bind:remove() end) end\n    r[owner] = nil\n  end\nend\nr[token] = handles\n'
+output=$(hyprctl eval "$code")
+[[ $output != *error:* ]] || { printf '%s\n' "$output" >&2; exit 1; }
+# hyprctl can return success for Lua failures; require observable registration.
+hyprctl binds -j | jq -e --arg desc "Orb shortcut wheel [orb:$token]" '[.[] | select(.description == $desc)] | length == 1' >/dev/null || {
+  echo 'Orb shortcut registration did not complete.' >&2; exit 1;
+}
+if [[ $desktop_click == true ]]; then
+  hyprctl binds -j | jq -e --arg desc "Orb on empty desktop [orb:$token]" '[.[] | select(.description == $desc)] | length == 1' >/dev/null || {
+    echo 'Orb desktop activation did not complete.' >&2; exit 1;
+  }
+fi
+printf 'ready\n'
