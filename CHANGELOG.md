@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 — release candidate
+## 0.1.0 — 2026-10-19
 
 Orb brings a pointer-centred shortcut wheel to Omarchy's Quattro shell.
 
@@ -16,4 +16,4 @@ Orb brings a pointer-centred shortcut wheel to Omarchy's Quattro shell.
 
 Tested on a Dell XPS 9320 at 1920×1200, scale 1. This targets the Quattro development contract documented in the acceptance evidence; older Omarchy releases are not claimed compatible. Physical multi-monitor/fractional-scale testing remains outstanding. Theme testing covers live shell palette changes, not full desktop retinting. See [acceptance evidence](docs/ACCEPTANCE.json) for the precise scope and remaining gaps.
 
-No tag, GitHub release or marketplace listing has been published.
+Owner acceptance completed on 2026-10-19. Marketplace listing remains subject to maintainer review.

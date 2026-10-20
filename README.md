@@ -66,11 +66,11 @@ If you used `./install`, run `./uninstall` as well to remove its shortcut module
 
 Developed on a Dell XPS 9320, 1920×1200 at scale 1, Omarchy dev `5f7aaeb8c`. [Acceptance evidence](docs/ACCEPTANCE.json) separates portable checks from direct desktop tests. [Development](docs/DEVELOPMENT.md) · [Architecture](ARCHITECTURE.md) · [Demo and recording](docs/DEMO.md).
 
-Six to eight configurable top-level entries with one submenu level. The panel does not yet edit custom command arguments, submenu contents or the summon shortcut. Agent discovery filters out first-run installer wrappers, requires a real installed executable, and does not alter the default agent. Multiple physical monitors, hotplug and fractional scaling need further live testing. Screenshot verification covers opening and cancelling the capture UI, not saving a capture. Theme verification uses real shell palette-change IPC and restores it; full desktop/app retinting is not exercised. Physical shortcut presses need a human check; automation uses the registered dispatcher and real Wayland input.
+Six to eight configurable top-level entries with one submenu level. The panel does not yet edit custom command arguments, submenu contents or the summon shortcut. Agent discovery filters out first-run installer wrappers, requires a real installed executable, and does not alter the default agent. Multiple physical monitors, hotplug and fractional scaling need further live testing. Screenshot verification covers opening and cancelling the capture UI, not saving a capture. Theme verification uses real shell palette-change IPC and restores it; full desktop/app retinting is not exercised. The owner confirmed final native validation, physical shortcut/focus behaviour, the six-to-eight-to-six saved-slot flow, light/dark captions and reinstall on 2026-10-19; automated evidence remains separately identified.
 
 Codex, Claude and Grok use the product marks bundled with Omarchy’s agents panel, with contrasting variants for light and dark themes. [Asset provenance](CREDITS.md#agent-marks).
 
-No release or marketplace listing has been published.
+Version 0.1.0 is prepared for publication; marketplace listing requires maintainer approval.
 
 Orb itself makes no network requests and requires no authentication. Applications and agents you launch can use their own network connections and accounts. Agent discovery reads installed executables and, when present, the local mise inventory; it does not install agents. Runtime helpers require the normal Omarchy launchers, Bash, jq and standard system utilities. The plugin reads the pointer position with `hyprctl` and starts the selected application or agent after dismissing the wheel.
 

@@ -7,7 +7,7 @@ Template authorship: Tom Ballard, 2026, MIT. Project author: Tom Ballard.
 - Community badge: [omarchy-badges](https://github.com/tcballard/omarchy-badges), pinned to 75975e5b5bf75e7ede3764bcd2950046f7abfe2c.
 - Test-only virtual pointer protocol: copyright 2019 Josef Gajdusek, MIT. Full licence remains in tests/virtual-pointer.xml. [Upstream protocol](https://gitlab.freedesktop.org/wlroots/wlr-protocols/-/blob/master/unstable/wlr-virtual-pointer-unstable-v1.xml).
 
-`preview.png` is a real cropped XPS desktop capture of Orb, including a small portion of the user's active wallpaper. It is a product screenshot, not a separately distributed wallpaper asset. Other local test captures remain under ignored `artifacts/` and are not published with the source.
+`preview.png` is a real cropped XPS desktop capture of Orb, including a small portion of the active wallpaper. Tom Ballard confirmed on 2026-10-19 that he made the wallpaper and owns or has permission to submit the plugin and preview assets. It is a product screenshot, not a separately distributed wallpaper asset. Other local test captures remain under ignored `artifacts/` and are not published with the source.
 
 ## Agent marks
 
