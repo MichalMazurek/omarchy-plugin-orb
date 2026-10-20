@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import qs.Commons as Commons
 import qs.Ui
 import "Model.js" as Model
+import "BindingLifecycle.js" as BindingLifecycle
 
 Item {
     id: root
@@ -43,9 +44,61 @@ Item {
     property string settingsSaveText: ""
     property string settingsError: ""
     property string shortcut: "SUPER + ALT + O"
+    readonly property string bindingOwner: String(Date.now()) + "-" + String(Math.floor(Math.random() * 1000000000)).padStart(9, "0")
+    property string bindingSignature: ""
+    property string setupError: ""
+    property bool setupPending: false
+    property bool setupReady: false
     readonly property bool hubActive: keyboardMode ? selected === -2 : wheelMouse.atCentre
     readonly property string pluginId: "io.github.tcballard.orb"
     readonly property string configPath: (Quickshell.env("XDG_CONFIG_HOME") || Quickshell.env("HOME") + "/.config") + "/omarchy/orb.json"
+
+    function requestSetup() {
+        setupPending = true;
+        setupDelay.restart();
+    }
+    function updateBindings(document) {
+        var signature = JSON.stringify([document.shortcut || "SUPER + ALT + O", document.desktopRightClick === true]);
+        if (signature === bindingSignature) return;
+        bindingSignature = signature;
+        requestSetup();
+    }
+    Component.onCompleted: requestSetup()
+    // The host deletes the checkout after disabling it. Cleanup must be independent
+    // of its files, and owner-scoped so an old unload cannot remove new bindings.
+    Component.onDestruction: Quickshell.execDetached(["hyprctl", "eval", BindingLifecycle.cleanup(bindingOwner)])
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (event.name === "configreloaded") root.requestSetup();
+        }
+    }
+    Timer {
+        id: setupDelay
+        interval: 100
+        onTriggered: {
+            if (nativeSetup.running) return;
+            root.setupPending = false;
+            nativeSetup.running = true;
+        }
+    }
+    Process {
+        id: nativeSetup
+        command: ["bash", decodeURIComponent(Qt.resolvedUrl("scripts/setup").toString().replace(/^file:\/\//, "")), root.bindingOwner]
+        stdout: StdioCollector {}
+        stderr: StdioCollector { id: setupStderr }
+        onExited: (exitCode, exitStatus) => {
+            root.setupReady = exitCode === 0;
+            root.setupError = exitCode === 0 ? "" : (setupStderr.text.trim().slice(0, 350) || "Orb setup failed. Retry in Orb settings.");
+            if (exitCode === 0) userConfig.reload();
+            else {
+                // Even a conflicting shortcut leaves a reachable in-app error/retry.
+                if (root.shell) root.shell.summon(root.pluginId, "{}");
+                root.activateHub();
+            }
+            if (root.setupPending) setupDelay.restart();
+        }
+    }
 
     function open(payloadJson) {
         // Payloads deliberately cannot change commands or configuration paths.
@@ -177,6 +230,7 @@ Item {
             captionFontSize: hint.font.pixelSize, footerHeight: panel.placement.footer,
             hubActive: hubActive,
             settingsOpen: settingsOpen, settingsSaving: settingsSaving, settingsError: settingsError,
+            setupReady: setupReady, setupError: setupError,
             settingsX: settingsCard.x, settingsY: settingsCard.y, settingsWidth: settingsCard.width, settingsHeight: settingsCard.height,
             draftDiameter: settingsCard.diameter, draftAnimation: settingsCard.animation,
             draftActions: settingsCard.actions, settingsTab: settingsCard.tab, editingSlot: settingsCard.editingSlot,
@@ -207,7 +261,11 @@ Item {
         onLoaded: {
             var parsed = Model.parse(text(), root.config);
             root.config = parsed.config; root.configError = parsed.error;
-            if (!parsed.error) root.shortcut = JSON.parse(text()).shortcut || "SUPER + ALT + O";
+            if (!parsed.error) {
+                var current = JSON.parse(text());
+                root.shortcut = current.shortcut || "SUPER + ALT + O";
+                root.updateBindings(current);
+            }
             if (root.settingsReloadPending) {
                 root.settingsReloadPending = false;
                 if (parsed.error) {
@@ -534,7 +592,9 @@ Item {
             shortcut: root.shortcut
             appLibrary: root.appLibrary
             busy: root.settingsSaving
-            error: root.settingsError
+            error: root.settingsError || root.setupError
+            setupFailed: root.setupError !== ""
+            onRetrySetup: root.requestSetup()
             onSaveRequested: root.saveSettings()
             onCanceled: root.cancelSettings()
         }
