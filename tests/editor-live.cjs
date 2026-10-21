@@ -44,12 +44,44 @@ async function reset(){ipc('shell','hide',id);fs.writeFileSync(config,fixtureTex
 function saved(){return JSON.parse(fs.readFileSync(config,'utf8'));}
 function previewPoint(s,index){const angle=(index*360/s.draftActions.length-90)*Math.PI/180,p=s.preview;return [s.settingsX+p.x+p.diameter/2+Math.cos(angle)*p.diameter*.33,s.settingsY+p.y+p.diameter/2+Math.sin(angle)*p.diameter*.33];}
 async function choose(query){text(query);await until(()=>status().pickerItems.length>0);key('Return');await sleep(100);}
+async function appearancePlacement(){
+    const [left,top,right,bottom]=monitor.reserved||[0,0,0,0];
+    const frame=()=>{const s=status();return [s.settingsX,s.settingsY,s.settingsWidth,s.settingsHeight];};
+    for(const count of [6,8]){
+        const sample=JSON.parse(fixtureText);while(sample.actions.length<count)sample.actions.push({...sample.actions[0]});
+        const sampleText=JSON.stringify(sample,null,2)+'\n';fs.writeFileSync(config,sampleText);
+        await until(()=>status().visibleItems.length===count);await sleep(180);
+        for(const p of [[1,1],[monitor.width-1,1],[1,monitor.height-1],[monitor.width-1,monitor.height-1],[1,monitor.height/2],[monitor.width-1,monitor.height/2]]){
+            ipc('shell','hide',id);move(...p);await openSettings();const opening=frame(),s=status();
+            assert.deepEqual([s.windowWidth,s.windowHeight],[monitor.width,monitor.height],'The nest was resized during the check; rerun with a stable display');
+            assert.ok(s.settingsX>=left+11.5&&s.settingsY>=top+11.5);
+            assert.ok(s.settingsX+s.settingsWidth<=monitor.width-right-11.5&&s.settingsY+s.settingsHeight<=monitor.height-bottom-11.5);
+            assert.ok(Math.abs(s.settingsX+s.settingsWidth/2-(left+monitor.width-right)/2)<=.5,'Settings must be horizontally centred regardless of the pointer');
+            assert.ok(Math.abs(s.settingsY+s.settingsHeight/2-(top+monitor.height-bottom)/2)<=.5,'Settings must be vertically centred in the usable area');
+            await click('orb-tab-1');assert.deepEqual(frame(),opening);
+            for(const [name,value] of [['small',240],['medium',360],['large',480]]){
+                await click('orb-size-'+name);assert.equal(status().draftDiameter,value);assert.deepEqual(frame(),opening);
+            }
+            const slider=control('orb-size-slider'),start=[slider.x+1,slider.y+slider.height/2],end=[slider.x+slider.width-1,start[1]];
+            assert.ok(slider.x>=s.settingsX&&slider.x+slider.width<=s.settingsX+s.settingsWidth);
+            move(...start,272,end);await sleep(160);assert.equal(status().draftDiameter,600);assert.deepEqual(frame(),opening);
+            move(...end,272,start);await sleep(160);assert.equal(status().draftDiameter,220);assert.deepEqual(frame(),opening);
+            if(count===8&&p[0]===monitor.width-1&&p[1]===monitor.height/2)capture('appearance-centred');
+            await click('orb-tab-2');assert.deepEqual(frame(),opening);await click('orb-tab-0');assert.deepEqual(frame(),opening);
+            await click('orb-cancel');assert.equal(fs.readFileSync(config,'utf8'),sampleText);
+        }
+    }
+    pass('Six/eight-slot Settings stay centred and fully on-screen at corners and side edges; tabs, presets and full slider drags retain their opening frame');
+    await reset();
+}
 const output=path.join(repo,'artifacts/command-arguments.json'),probe=path.join(repo,'artifacts/orb-command-probe');
 fs.rmSync(output,{force:true});
 fs.writeFileSync(probe,'#!/usr/bin/python3\nimport json,sys,os\noutput='+JSON.stringify(output)+'\nwith open(output+".tmp", "w") as f: json.dump(sys.argv[1:], f)\nos.replace(output+".tmp", output)\n',{mode:0o755});
 (async()=>{try{
 await until(()=>spawnSync('omarchy-shell',[id,'status'],{encoding:'utf8'}).status===0,'Orb did not finish loading');
 await reset();await until(()=>status().setupReady,'Native shortcut setup failed: '+status().setupError);
+if(!process.argv.includes('--submenu-only'))await appearancePlacement();
+if(process.argv.includes('--appearance-only'))return;
 move(monitor.width/2,monitor.height/2);
 if(!process.argv.includes('--submenu-only')){
 await openSettings();const initialFrame=[status().settingsWidth,status().settingsHeight];await click('orb-tab-1');

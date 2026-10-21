@@ -344,6 +344,7 @@ FocusScope {
                 }
                 Item {
                     id: sizeControl
+                    objectName: "orb-size-slider"
                     width: parent.width; height: Commons.Style.space(34); activeFocusOnTab: true
                     Keys.onLeftPressed: panel.diameter = Math.max(220, panel.diameter - 10)
                     Keys.onRightPressed: panel.diameter = Math.min(600, panel.diameter + 10)

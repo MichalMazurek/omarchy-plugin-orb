@@ -621,10 +621,13 @@ Item {
             id: settingsCard
             visible: root.opened && root.positioned && root.settingsOpen
             readonly property var reserved: panel.monitorData.reserved || [0, 0, 0, 0]
-            width: Math.min(Commons.Style.space(680), panel.width - reserved[0] - reserved[2] - 24)
-            maximumHeight: panel.height - reserved[1] - reserved[3] - 24
-            x: Math.max(reserved[0] + 12, Math.min(wheel.x + wheel.width / 2 - width / 2, panel.width - reserved[2] - width - 12))
-            y: Math.max(reserved[1] + 12, Math.min(wheel.y + wheel.height / 2 - height / 2, panel.height - reserved[3] - height - 12))
+            readonly property rect availableArea: Qt.rect(reserved[0] + 12, reserved[1] + 12,
+                Math.max(1, panel.width - reserved[0] - reserved[2] - 24),
+                Math.max(1, panel.height - reserved[1] - reserved[3] - 24))
+            width: Math.min(Commons.Style.space(680), availableArea.width)
+            maximumHeight: availableArea.height
+            x: Math.round(availableArea.x + (availableArea.width - width) / 2)
+            y: Math.round(availableArea.y + (availableArea.height - height) / 2)
             appLibrary: root.appLibrary
             busy: root.settingsSaving
             error: root.settingsError || root.setupError

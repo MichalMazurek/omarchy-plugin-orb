@@ -9,6 +9,7 @@
 - Create and edit custom commands, including separate arguments and an icon picker.
 - Add, edit, reorder and remove submenu actions without editing JSON.
 - Keep Settings at its opening size while switching tabs or editing shortcuts and submenus.
+- Centre Settings in the current screen’s usable area, independent of Orb’s position near desktop edges.
 - Give the Settings scrollbar its own gutter and hide it when the page fits.
 - Retain custom action metadata through reordering and edits; preserve unrelated concurrent changes.
 - Finish unchanged saves normally and keep shortcut bindings working across repeated setup and activation changes.
