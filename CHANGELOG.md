@@ -6,6 +6,7 @@
 - Change the opening shortcut and desktop right-click in Settings, with validation and conflict checks before saving.
 - Create and edit custom commands, including separate arguments and an icon picker.
 - Add, edit, reorder and remove submenu actions without editing JSON.
+- Keep Settings at its opening size while switching tabs or editing shortcuts and submenus.
 - Retain custom action metadata through reordering and edits; preserve unrelated concurrent changes.
 - Finish unchanged saves normally and keep shortcut bindings working across repeated setup and activation changes.
 

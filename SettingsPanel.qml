@@ -24,6 +24,7 @@ FocusScope {
     property int selectedSlot: 0
     property int editingSlot: -1
     property real maximumHeight: 800
+    property real openingHeight: 0
     property alias editor: actionEditor
     readonly property var positions: actions.length === 8 ? ["Top", "Upper right", "Right", "Lower right", "Bottom", "Lower left", "Left", "Upper left"]
         : actions.length === 7 ? ["Top", "Upper right", "Right", "Lower right", "Lower left", "Left", "Upper left"]
@@ -31,7 +32,7 @@ FocusScope {
     readonly property bool wide: width >= Commons.Style.space(580)
     readonly property var shortcutCheck: Model.shortcut(shortcut)
     readonly property var filteredChoices: actionEditor.filteredChoices
-    implicitHeight: Math.min(maximumHeight, header.height + bodyColumn.height + footer.height + Commons.Style.space(64))
+    implicitHeight: Math.min(maximumHeight, openingHeight || header.height + bodyColumn.height + footer.height + Commons.Style.space(64))
     height: implicitHeight
     signal saveRequested()
     signal canceled()
@@ -45,6 +46,7 @@ FocusScope {
         actionOrigins = actions.map(function(a, i) { return i; });
         childOrigins = actions.map(function(a) { return a.children ? a.children.map(function(c, i) { return i; }) : []; });
         tab = 0; selectedSlot = 0; editingSlot = -1; body.contentY = 0;
+        openingHeight = 0;
         Qt.callLater(function() { slotNavigation.forceActiveFocus(); });
     }
     function draft() { return { diameter: diameter, animation: animation, actions: actions,
@@ -326,6 +328,12 @@ FocusScope {
             EditorButton { objectName: "orb-cancel"; width: (parent.width - parent.spacing) / 2; text: "Cancel"; enabled: !panel.busy; onClicked: panel.canceled() }
             EditorButton { objectName: "orb-save"; width: (parent.width - parent.spacing) / 2; text: panel.busy ? "Saving…" : "Save"; selected: true; enabled: !panel.busy && !panel.shortcutCheck.error; onClicked: panel.requestSave() }
         }
+    }
+    Connections {
+        target: panel.Window.window
+        enabled: panel.visible && panel.openingHeight === 0
+        // Capture the rendered layout, after the columns have been polished.
+        function onFrameSwapped() { panel.openingHeight = panel.implicitHeight; }
     }
     Connections {
         target: panel.Window.window
