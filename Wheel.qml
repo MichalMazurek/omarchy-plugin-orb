@@ -261,7 +261,7 @@ Item {
             editorIcon: settingsCard.editor.actionIcon, editorDepth: settingsCard.editor.depth,
             editorArguments: settingsCard.editor.commandArguments, editorChildren: settingsCard.editor.submenuActions,
             draftActions: settingsCard.actions, settingsTab: settingsCard.tab, editingSlot: settingsCard.editingSlot,
-            pickerItems: settingsCard.editingSlot >= 0 ? settingsCard.editor.pickerTitles() : [],
+            pickerItems: settingsCard.pickerTitles(), browsingActions: settingsCard.browsingActions,
             screen: panel.targetScreen ? panel.targetScreen.name : "", error: configError,
             foreground: String(Commons.Color.menu.text), background: String(Commons.Color.menu.background),
             lastAction: lastAction, lastDispatch: lastDispatch, pendingDesktopId: pendingDesktopId, launchPending: launchDelay.running,

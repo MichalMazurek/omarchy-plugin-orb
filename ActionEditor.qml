@@ -9,7 +9,7 @@ FocusScope {
     property var initial: null
     property int depth: 0
     property int mode: 0
-    property int pickerCursor: 0
+    property alias pickerCursor: actionPicker.cursor
     property string actionLabel: ""
     property string actionIcon: "terminal"
     property string program: ""
@@ -20,10 +20,7 @@ FocusScope {
     property bool busy: false
     property string error: ""
     readonly property string controlPrefix: depth ? "orb-child-" : "orb-action-"
-    readonly property var filteredChoices: choices.filter(function(row) {
-        return (!depth || (!row.action.children && !row.action.menu))
-            && (row.title + " " + row.detail).toLowerCase().indexOf(search.text.trim().toLowerCase()) >= 0;
-    })
+    readonly property var filteredChoices: actionPicker.filteredChoices
     readonly property string pageTitle: editingChild >= 0 ? "Submenu action " + (editingChild + 1) : mode === 1 ? "Custom command" : mode === 2 ? "Edit submenu" : "Choose an action"
     implicitHeight: childLoader.active && childLoader.item ? childLoader.item.implicitHeight : content.height
     signal chosen(var action, var origins)
@@ -40,7 +37,7 @@ FocusScope {
         childOrigins = submenuActions.map(function(c, i) { return origins && origins[i] !== undefined ? origins[i] : i; });
         var known = value && catalog.some(function(c) { return JSON.stringify(c.action) === JSON.stringify(value); });
         mode = value && value.children ? 2 : value && value.command && !known ? 1 : 0;
-        search.text = ""; pickerCursor = 0;
+        actionPicker.reset();
         Qt.callLater(function() { editor.focusFirst(); });
     }
     function pickerTitles() {
@@ -48,22 +45,14 @@ FocusScope {
     }
     function focusFirst() {
         if (editingChild >= 0 && childLoader.item) childLoader.item.focusFirst();
-        else if (mode === 0) search.forceActiveFocus();
+        else if (mode === 0) actionPicker.focusSearch();
         else labelInput.forceActiveFocus();
     }
     function changeMode(value) { mode = value; error = ""; Qt.callLater(function() { editor.focusFirst(); }); }
     function setArgument(index, value) { var copy = commandArguments.slice(); copy[index] = value; commandArguments = copy; }
     function removeArgument(index) { var copy = commandArguments.slice(); copy.splice(index, 1); commandArguments = copy; }
-    function choose(index) {
-        if (busy || index < 0 || index >= filteredChoices.length) return;
-        var value = JSON.parse(JSON.stringify(filteredChoices[index].action));
-        chosen(value, value.children ? value.children.map(function() { return -1; }) : []);
-    }
-    function movePicker(delta) {
-        if (!filteredChoices.length) return;
-        pickerCursor = (pickerCursor + delta + filteredChoices.length) % filteredChoices.length;
-        picker.positionViewAtIndex(pickerCursor, ListView.Contain);
-    }
+    function choose(index) { actionPicker.choose(index); }
+    function movePicker(delta) { actionPicker.moveCursor(delta); }
     function apply() {
         if (busy) return;
         var value = { label: actionLabel, icon: actionIcon };
@@ -119,49 +108,12 @@ FocusScope {
                 }
             }
         }
-        Column {
+        ActionPicker {
+            id: actionPicker
             visible: editor.mode === 0
-            width: parent.width; spacing: Commons.Style.space(8)
-            TextField {
-                id: search
-                objectName: editor.controlPrefix + "search"
-                width: parent.width; placeholderText: "Search apps and shortcuts…"; enabled: !editor.busy
-                onTextChanged: { editor.pickerCursor = 0; picker.positionViewAtBeginning(); }
-                Keys.onDownPressed: editor.movePicker(1)
-                Keys.onUpPressed: editor.movePicker(-1)
-                Keys.onReturnPressed: event => { event.accepted = true; Qt.callLater(function() { editor.choose(editor.pickerCursor); }); }
-                Keys.onEnterPressed: event => { event.accepted = true; Qt.callLater(function() { editor.choose(editor.pickerCursor); }); }
-            }
-            ListView {
-                id: picker
-                width: parent.width; height: Commons.Style.space(252)
-                clip: true; spacing: Commons.Style.space(4); boundsBehavior: Flickable.StopAtBounds
-                model: editor.filteredChoices
-                WheelHandler {
-                    target: null
-                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                    onWheel: event => {
-                        var delta = event.pixelDelta.y || event.angleDelta.y / 120 * Commons.Style.space(44);
-                        picker.contentY = Math.max(0, Math.min(picker.contentHeight - picker.height, picker.contentY - delta));
-                        event.accepted = true;
-                    }
-                }
-                delegate: EditorButton {
-                    required property int index
-                    required property var modelData
-                    width: picker.width; height: Commons.Style.space(44)
-                    text: modelData.title; leftAlign: true; leftPadding: Commons.Style.space(44)
-                    selected: index === editor.pickerCursor; enabled: !editor.busy
-                    tooltipText: modelData.detail
-                    ActionIcon {
-                        x: Commons.Style.space(10); anchors.verticalCenter: parent.verticalCenter
-                        width: Commons.Style.space(22); height: width
-                        name: modelData.action.icon; appSource: modelData.iconSource || ""; selected: index === editor.pickerCursor
-                    }
-                    onClicked: editor.choose(index)
-                }
-                EditorLabel { anchors.centerIn: parent; visible: picker.count === 0; text: "No matching apps or shortcuts" }
-            }
+            width: parent.width; choices: editor.choices; depth: editor.depth; busy: editor.busy
+            controlPrefix: editor.controlPrefix
+            onChosen: value => editor.chosen(value, value.children ? value.children.map(function() { return -1; }) : [])
         }
         Column {
             visible: editor.mode !== 0

@@ -52,6 +52,44 @@ await until(()=>spawnSync('omarchy-shell',[id,'status'],{encoding:'utf8'}).statu
 await reset();await until(()=>status().setupReady,'Native shortcut setup failed: '+status().setupError);
 move(monitor.width/2,monitor.height/2);
 if(!process.argv.includes('--submenu-only')){
+await openSettings();const initialFrame=[status().settingsWidth,status().settingsHeight];await click('orb-tab-1');
+for(const [name,value] of [['small',240],['medium',360],['large',480]]){
+    await click('orb-size-'+name);assert.equal(status().draftDiameter,value);
+    assert.deepEqual([status().settingsWidth,status().settingsHeight],initialFrame);
+}
+await click('orb-cancel');assert.equal(fs.readFileSync(config,'utf8'),fixtureText);
+pass('Small, Medium and Large stage exact sizes without resizing Settings; Cancel preserves the saved size');
+await openSettings();await click('orb-browse-actions');assert.equal(status().browsingActions,true);
+const catalogScroll=control('orb-catalog-scrollbar'),firstChoiceY=control('orb-catalog-choice-0').y,outerScroll=status().settingsLayout.scroll;
+move(catalogScroll.x-20,catalogScroll.y+catalogScroll.height/2,-1);await sleep(180);
+assert.ok(!status().settingsControls.some(c=>c.name==='orb-catalog-choice-0')||control('orb-catalog-choice-0').y<firstChoiceY,'The catalog must scroll independently');
+assert.equal(status().settingsLayout.scroll,outerScroll,'Catalog scrolling must leave the wheel in place');
+await fill('orb-catalog-search','Files');await until(()=>status().pickerItems[0]==='Files');
+const unassigned=JSON.stringify(status().draftActions);
+let source=control('orb-catalog-choice-0');s=status();
+const centre=[s.settingsX+s.preview.x+s.preview.diameter/2,s.settingsY+s.preview.y+s.preview.diameter/2];
+move(source.x+source.width/2,source.y+source.height/2,272,centre);await sleep(120);assert.equal(JSON.stringify(status().draftActions),unassigned);
+source=control('orb-catalog-choice-0');s=status();move(source.x+source.width/2,source.y+source.height/2,272,[s.settingsX+20,s.settingsY+20]);await sleep(120);assert.equal(JSON.stringify(status().draftActions),unassigned);
+source=control('orb-catalog-choice-0');s=status();let destination=previewPoint(s,0);
+assert.ok(destination[1]>=s.settingsY+s.settingsLayout.bodyY,'The wheel must remain visible beside the picker');
+move(source.x+source.width/2,source.y+source.height/2,272,destination);await until(()=>status().draftActions[0].label==='Files','Catalog drag did not assign the slot');
+assert.equal(status().browsingActions,true);assert.equal(fs.readFileSync(config,'utf8'),fixtureText);
+s=status();move(...previewPoint(s,0),272,previewPoint(s,1));await until(()=>status().draftActions[1].label==='Files');assert.equal(status().browsingActions,true);
+await click('orb-cancel');assert.equal(fs.readFileSync(config,'utf8'),fixtureText);
+pass('Dragging from the searchable catalog assigns a draft slot; dropping in the centre or outside cancels; Cancel preserves the file');
+await openSettings();await click('orb-browse-actions');await fill('orb-catalog-search','Files');
+source=control('orb-catalog-choice-0');s=status();move(source.x+source.width/2,source.y+source.height/2,272,previewPoint(s,0));await until(()=>status().draftActions[0].label==='Files');
+await fill('orb-catalog-search','Make something cool');source=control('orb-catalog-choice-0');s=status();move(source.x+source.width/2,source.y+source.height/2,272,previewPoint(s,5));await until(()=>status().draftActions[5].children?.length===3);
+capture('editor-action-browser');await click('orb-tab-1');await click('orb-size-medium');await save();
+assert.equal(saved().diameter,360);assert.equal(saved().actions[0].label,'Files');assert.equal(saved().actions[0].note,'Browser metadata');assert.equal(saved().actions[5].children.length,3);assert.equal(saved().custom,'preserve');
+await openSettings();assert.equal(status().draftDiameter,360);assert.equal(status().draftActions[0].label,'Files');
+await click('orb-browse-actions');await fill('orb-catalog-search','Ghostty');await until(()=>status().pickerItems.some(t=>t.toLowerCase().includes('ghostty')));key('Return');
+assert.ok(status().draftActions[0].desktopId,'Keyboard assignment must retain the installed app desktop ID');await save();assert.ok(saved().actions[0].desktopId);
+await openSettings();await click('orb-browse-actions');s=status();move(...previewPoint(s,2),272);assert.equal(status().selectedSlot,2);
+await fill('orb-catalog-search','Screenshot');await click('orb-catalog-choice-0');assert.equal(status().draftActions[2].label,'Screenshot');await click('orb-cancel');assert.equal(saved().actions[2].label,'Files');assert.ok(saved().actions[0].desktopId);
+pass('Several catalog assignments and a size preset save/reopen together, including submenus and app IDs; metadata and click/keyboard alternatives work');
+await reset();
+if(process.argv.includes('--catalog-only'))return;
 await openSettings();capture('editor-shortcuts');
 s=status();let from=previewPoint(s,0),to=previewPoint(s,2);move(...from,272,to);
 await until(()=>status().draftActions[2].label==='Browser','Drag did not reorder');
@@ -102,5 +140,5 @@ throw error;
 }finally{
 try{ipc('shell','hide',id);}catch{}
 fs.writeFileSync(config,oldText);
-fs.writeFileSync(path.join(repo,'artifacts/editor-live-results.json'),JSON.stringify({date:new Date().toISOString(),source:run('git','-C',repo,'rev-parse','HEAD'),omarchy:run('git','-C',process.env.OMARCHY_PATH,'rev-parse','HEAD'),display:{width:monitor.width,height:monitor.height,scale:monitor.scale},report},null,2)+'\n');
+fs.writeFileSync(path.join(repo,'artifacts/editor-live-results.json'),JSON.stringify({date:new Date().toISOString(),source:run('git','-C',repo,'rev-parse','HEAD'),workingTree:run('git','-C',repo,'status','--short'),runtimeHashes:Object.fromEntries(['ActionPicker.qml','ActionEditor.qml','SettingsPanel.qml','WheelPreview.qml','Wheel.qml','Model.js'].map(f=>[f,require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(repo,f))).digest('hex')])),omarchy:run('git','-C',process.env.OMARCHY_PATH,'rev-parse','HEAD'),display:{width:monitor.width,height:monitor.height,scale:monitor.scale},report},null,2)+'\n');
 }})().catch(error=>{console.error(error);process.exitCode=1;});

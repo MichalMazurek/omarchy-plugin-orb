@@ -20,7 +20,7 @@ omadev ensure 4 --owner orb-settings --plugin "$PWD"
 node tests/editor-live.cjs
 ```
 
-The harness refuses the host desktop. It saves/restores the nest's Orb config, uses real Wayland pointer/drag and keyboard input, and exercises draft/cancel/save/reopen, metadata retention, keyboard reordering, opening controls and live binding updates, shortcut conflicts, custom command arguments, submenu edits and launches, six-to-eight shortcuts and screen edges. Commands launch only a local argv-recording fixture. Captures and JSON results stay under ignored `artifacts/`. `--submenu-only` narrows a failed submenu check. No video is recorded.
+The harness refuses the host desktop. It saves/restores the nest's Orb config, uses real Wayland pointer/drag and keyboard input, and exercises size presets, direct catalog-to-wheel assignment, cancelled drops, draft/cancel/save/reopen, metadata retention, keyboard reordering, opening controls and live binding updates, shortcut conflicts, custom command arguments, submenu edits and launches, six-to-eight shortcuts and screen edges. Commands launch only a local argv-recording fixture. Captures and JSON results stay under ignored `artifacts/`. `--catalog-only` checks presets and direct assignment; `--submenu-only` narrows a failed submenu check. No video is recorded.
 
 The older `settings-live.cjs`, `slots-live.cjs` and `expanded-slots-live.cjs` harnesses record the v0.1 panel's keyboard paths. Use `editor-live.cjs` for the new settings UI. The remaining opt-in live harnesses below control the actual desktop; they are not part of the portable suite and should be run only with the desktop idle or adapted to a nest.
 

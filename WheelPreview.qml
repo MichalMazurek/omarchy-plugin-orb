@@ -11,11 +11,24 @@ Item {
     property int dragFrom: -1
     property int dragTo: -1
     property bool dragging: false
+    property var assignmentAction: null
+    property int assignmentTarget: -1
     property point pressPoint: Qt.point(0, 0)
     signal picked(int index)
     signal moved(int from, int to)
-    readonly property int highlighted: dragging ? dragTo : pointer.containsMouse ? Model.hit(pointer.mouseX, pointer.mouseY, width, actions.length) : selected
-    readonly property string caption: dragging ? (dragTo < 0 ? "Release outside to cancel" : "Move " + actions[dragFrom].label + " to slot " + (dragTo + 1))
+    signal assigned(int index, var action)
+    function hoverAssignment(action, x, y) {
+        assignmentAction = action; assignmentTarget = Model.hit(x, y, width, actions.length);
+    }
+    function cancelAssignment() { assignmentAction = null; assignmentTarget = -1; }
+    function dropAssignment(action, x, y) {
+        var index = Model.hit(x, y, width, actions.length);
+        cancelAssignment();
+        if (!busy && index >= 0) assigned(index, action);
+    }
+    readonly property int highlighted: assignmentAction ? assignmentTarget : dragging ? dragTo : pointer.containsMouse ? Model.hit(pointer.mouseX, pointer.mouseY, width, actions.length) : selected
+    readonly property string caption: assignmentAction ? (assignmentTarget < 0 ? "Drop on a slot · release outside to cancel" : "Replace slot " + (assignmentTarget + 1) + " with " + assignmentAction.label)
+        : dragging ? (dragTo < 0 ? "Release outside to cancel" : "Move " + actions[dragFrom].label + " to slot " + (dragTo + 1))
         : highlighted >= 0 && highlighted < actions.length ? actions[highlighted].label : "Click to edit · drag to arrange"
     height: width
 

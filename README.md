@@ -45,10 +45,10 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 - Optional **right-click on empty desktop** also opens Orb. This is enabled on this XPS; applications retain their context menus. Super+Alt+O remains available.
 - Hover a sector and left-click to launch. The centre logo glows on hover; click it to open Orb’s compact settings panel. In a submenu, the centre goes back.
 - Arrow keys or Tab/Shift+Tab cycle; 1–8 select an available slot; Enter launches. Home selects the centre button; Enter opens Orb settings (or goes back in a submenu).
-- **Shortcuts** shows your layout as a wheel. Drag an icon to another sector to move it, or use the arrow buttons / Alt+Left and Alt+Right. Click a sector or row to edit it. Arrow keys select rows; Enter edits. **Add shortcut** expands from six to eight; **Remove** or Delete removes the selected shortcut down to six.
+- **Shortcuts** shows your layout as a wheel. Drag an icon to another sector to move it, or use the arrow buttons / Alt+Left and Alt+Right. **Browse actions** opens a searchable picker beside the wheel: drag an app, shortcut or submenu onto any slot. Click a slot and choose an action, or use the picker's arrow keys and Enter, for the same assignment. Changes stay in the draft until **Save**. **Back to shortcuts** returns to the slot list; click a sector or row to edit it. Arrow keys select rows; Enter edits. **Add shortcut** expands from six to eight; **Remove** or Delete removes the selected shortcut down to six.
 - The action editor offers **Apps & shortcuts**, **Custom command**, and **Submenu**. Custom commands have a name, icon, program and separate argument fields; spaces stay inside the argument and shell punctuation is passed literally. Submenus contain up to twelve app, shortcut or custom-command actions, with controls to add, edit, reorder and remove them. Submenus cannot contain another submenu. **Use command / Use submenu** stages the change; Back/Escape discards that editor's draft.
 - **Opening** changes the Super shortcut and optional desktop right-click. Choose Ctrl/Alt/Shift and a letter, number, F1–F12 or Space. Conflicts appear before saving and preserve the existing binding. Changes apply live.
-- **Appearance** controls wheel size and opening animation. **Save** or Ctrl+S applies all staged settings; **Cancel/Escape** discards them. Tab moves between controls. Settings keeps its opening size across tabs and action editors, scrolling longer content inside the panel.
+- **Appearance** offers **Small**, **Medium** and **Large** wheel sizes, with a slider for fine adjustment and a separate opening-animation toggle. Existing custom sizes are retained. **Save** or Ctrl+S applies all staged settings; **Cancel/Escape** discards them. Tab moves between controls. Settings keeps its opening size across tabs and action editors, scrolling longer content inside the panel.
 - Escape/Left/Backspace or the centre button returns from a submenu. Escape on the wheel, outside click, or the summon shortcut again dismisses.
 - Sectors show centred icons at every wheel size. The full hovered or keyboard-selected action name appears beneath Orb, including in submenus. Its text and pill grow with the wheel, retaining a readable minimum at small sizes.
 - The wheel and keyboard hint stay clear of monitor edges and reserved bar space.
@@ -56,9 +56,11 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 - **Make something cool** is an optional slot: search for it in Apps & shortcuts to add a circular **New theme / New plugin / New app** menu. Selecting a starter opens your default Omarchy agent with the same prompt used by the native Agents panel.
 - Opening animates for 190ms; system reduced motion is respected.
 
-![Orb settings with a draggable wheel preview and the default six shortcuts](docs/settings-preview.png)
+![Orb settings with a draggable wheel preview and the default six shortcuts](docs/catalog-settings.png)
 
-Native capture and editor checks: [Settings acceptance evidence](docs/SETTINGS-ACCEPTANCE.json).
+![Browse actions beside the wheel and assign them directly to slots](docs/catalog-browser.png)
+
+Native captures and current editor checks: [Catalog and size-preset evidence](docs/CATALOG-ACCEPTANCE.json). Earlier editor checks: [Settings acceptance evidence](docs/SETTINGS-ACCEPTANCE.json).
 
 Settings remain in `~/.config/omarchy/orb.json`, and can still be edited directly. See [the example](config.example.json). Six to eight top-level actions, one submenu level, the installed-agent menu (`"menu": "agents"`), size, animation, shortcut and desktop activation are supported. The default diameter is 240 theme units. App choices store a `desktopId` and launch through Quattro’s app library; icons follow the installed application. Custom commands run as argument arrays without shell-string evaluation. Orb preserves unrelated settings and metadata on moved or edited actions, and rejects conflicting external edits. Invalid configuration retains the last valid actions and shows an error hint.
 

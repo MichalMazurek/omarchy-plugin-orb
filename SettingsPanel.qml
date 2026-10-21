@@ -23,6 +23,10 @@ FocusScope {
     property int tab: 0
     property int selectedSlot: 0
     property int editingSlot: -1
+    property bool browsingActions: false
+    property var draggedAction: null
+    property string draggedIconSource: ""
+    property point dragPosition: Qt.point(0, 0)
     property real maximumHeight: 800
     property real openingHeight: 0
     property alias editor: actionEditor
@@ -32,6 +36,7 @@ FocusScope {
     readonly property bool wide: width >= Commons.Style.space(580)
     readonly property var shortcutCheck: Model.shortcut(shortcut)
     readonly property var filteredChoices: actionEditor.filteredChoices
+    readonly property var sizePresets: [{ name: "Small", value: 240 }, { name: "Medium", value: 360 }, { name: "Large", value: 480 }]
     implicitHeight: Math.min(maximumHeight, openingHeight || header.height + bodyColumn.height + footer.height + Commons.Style.space(64))
     height: implicitHeight
     signal saveRequested()
@@ -46,6 +51,7 @@ FocusScope {
         actionOrigins = actions.map(function(a, i) { return i; });
         childOrigins = actions.map(function(a) { return a.children ? a.children.map(function(c, i) { return i; }) : []; });
         tab = 0; selectedSlot = 0; editingSlot = -1; body.contentY = 0;
+        browsingActions = false; actionBrowser.reset(); clearAssignment();
         openingHeight = 0;
         Qt.callLater(function() { slotNavigation.forceActiveFocus(); });
     }
@@ -61,7 +67,8 @@ FocusScope {
     function selectTab(index) {
         tab = index; body.contentY = 0;
         Qt.callLater(function() {
-            if (index === 0) slotNavigation.forceActiveFocus();
+            if (index === 0 && browsingActions) actionBrowser.focusSearch();
+            else if (index === 0) slotNavigation.forceActiveFocus();
             else if (index === 1) sizeControl.forceActiveFocus();
             else openingKey.forceActiveFocus();
         });
@@ -92,8 +99,23 @@ FocusScope {
     function moveSlot(from, to) {
         if (busy || from < 0 || to < 0 || from >= actions.length || to >= actions.length) return;
         actions = Model.move(actions, from, to); actionOrigins = Model.move(actionOrigins, from, to); childOrigins = Model.move(childOrigins, from, to);
-        selectedSlot = to; slotNavigation.forceActiveFocus();
+        selectedSlot = to;
+        if (browsingActions) actionBrowser.focusSearch(); else slotNavigation.forceActiveFocus();
     }
+    function browseActions() {
+        browsingActions = !browsingActions; body.contentY = 0; clearAssignment();
+        Qt.callLater(function() { if (panel.browsingActions) actionBrowser.focusSearch(); else slotNavigation.forceActiveFocus(); });
+    }
+    function assignAction(index, value) {
+        if (busy || index < 0 || index >= actions.length) return;
+        var checked = Model.action(JSON.parse(JSON.stringify(value)), 0);
+        if (!checked) return;
+        var copy = actions.slice(), childOrder = childOrigins.slice();
+        copy[index] = checked; childOrder[index] = checked.children ? checked.children.map(function() { return -1; }) : [];
+        actions = copy; childOrigins = childOrder; selectedSlot = index;
+    }
+    function clearAssignment() { draggedAction = null; draggedIconSource = ""; preview.cancelAssignment(); }
+    function pickerTitles() { return browsingActions && editingSlot < 0 ? actionBrowser.titles() : editingSlot >= 0 ? actionEditor.pickerTitles() : []; }
     function toggleModifier(modifier) {
         var checked = Model.shortcut(shortcut), mask = checked.error ? 72 : checked.mask;
         mask ^= modifier;
@@ -206,27 +228,36 @@ FocusScope {
             x: bodyScrollBar.mirrored ? bodyScrollBar.width + Commons.Style.space(6) : 0
             width: Math.max(0, body.width - bodyScrollBar.width - Commons.Style.space(6)); spacing: Commons.Style.space(10)
             Item {
+                id: shortcutsLayout
                 visible: panel.editingSlot < 0 && panel.tab === 0
                 width: parent.width
-                height: panel.wide ? Math.max(previewColumn.height, slotColumn.height) : previewColumn.height + slotColumn.height + Commons.Style.space(14)
+                readonly property bool sideBySide: width >= Commons.Style.space(380)
+                readonly property real rightHeight: panel.browsingActions ? browserColumn.height : slotColumn.height
+                height: sideBySide ? Math.max(previewColumn.height, rightHeight) : previewColumn.height + rightHeight + Commons.Style.space(14)
                 Column {
                     id: previewColumn
-                    x: panel.wide ? 0 : (parent.width - width) / 2
-                    width: Math.min(Commons.Style.space(260), parent.width); spacing: Commons.Style.space(10)
+                    x: shortcutsLayout.sideBySide ? 0 : (parent.width - width) / 2
+                    width: Math.min(Commons.Style.space(panel.wide ? 260 : shortcutsLayout.sideBySide ? 170 : 150), parent.width); spacing: Commons.Style.space(10)
                     WheelPreview {
                         id: preview
                         width: parent.width; actions: panel.actions; selected: panel.selectedSlot; busy: panel.busy
+                        activeFocusOnTab: panel.browsingActions
                         iconSources: panel.actions.map(function(a) { return panel.appIcon(a); })
-                        onPicked: index => panel.editSlot(index)
+                        onPicked: index => { if (panel.browsingActions) { panel.selectedSlot = index; forceActiveFocus(); } else panel.editSlot(index); }
                         onMoved: (from, to) => panel.moveSlot(from, to)
+                        onAssigned: (index, action) => panel.assignAction(index, action)
+                        Keys.onLeftPressed: panel.selectedSlot = (panel.selectedSlot + panel.actions.length - 1) % panel.actions.length
+                        Keys.onRightPressed: panel.selectedSlot = (panel.selectedSlot + 1) % panel.actions.length
                     }
                     EditorLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: preview.caption; wrapMode: Text.WordWrap }
-                    EditorLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: "Drag to arrange · click to edit"; opacity: 0.65; font.pixelSize: Commons.Style.space(10) }
+                    EditorLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: panel.browsingActions ? "Drag an action onto a slot" : "Drag to arrange · click to edit"; wrapMode: Text.WordWrap; opacity: 0.65; font.pixelSize: Commons.Style.space(10) }
+                    EditorButton { objectName: "orb-browse-actions"; width: parent.width; text: panel.browsingActions ? "Back to shortcuts" : "Browse actions"; selected: panel.browsingActions; enabled: !panel.busy; onClicked: panel.browseActions() }
                 }
                 Column {
                     id: slotColumn
-                    x: panel.wide ? previewColumn.width + Commons.Style.space(18) : 0
-                    y: panel.wide ? 0 : previewColumn.height + Commons.Style.space(14)
+                    visible: !panel.browsingActions
+                    x: shortcutsLayout.sideBySide ? previewColumn.width + Commons.Style.space(18) : 0
+                    y: shortcutsLayout.sideBySide ? 0 : previewColumn.height + Commons.Style.space(14)
                     width: parent.width - x; spacing: Commons.Style.space(7)
                     Item {
                         id: slotNavigation
@@ -271,11 +302,46 @@ FocusScope {
                     EditorButton { objectName: "orb-add-slot"; width: parent.width; text: panel.actions.length < 8 ? "+ Add shortcut · " + panel.actions.length + " / 8" : "8 / 8 shortcuts"; enabled: !panel.busy && panel.actions.length < 8; onClicked: panel.addSlot() }
                     EditorLabel { width: parent.width; wrapMode: Text.WordWrap; text: "↑ ↓ select · Enter edits · Alt+← → moves"; opacity: 0.65; font.pixelSize: Commons.Style.space(10) }
                 }
+                Column {
+                    id: browserColumn
+                    visible: panel.browsingActions
+                    x: slotColumn.x; y: slotColumn.y; width: slotColumn.width; spacing: Commons.Style.space(8)
+                    EditorLabel { width: parent.width; text: "Click to replace slot " + (panel.selectedSlot + 1) + " · drag to any slot"; wrapMode: Text.WordWrap; opacity: 0.65 }
+                    ActionPicker {
+                        id: actionBrowser
+                        width: parent.width; choices: panel.choices; busy: panel.busy; draggable: true; dragSurface: panel
+                        listHeight: Commons.Style.space(shortcutsLayout.sideBySide ? 252 : 140)
+                        onChosen: action => panel.assignAction(panel.selectedSlot, action)
+                        onDragMoved: (action, iconSource, x, y) => {
+                            panel.draggedAction = action; panel.draggedIconSource = iconSource; panel.dragPosition = Qt.point(x, y);
+                            var point = preview.mapFromItem(panel, x, y);
+                            preview.hoverAssignment(action, point.x, point.y);
+                        }
+                        onDragFinished: (action, x, y) => {
+                            var point = preview.mapFromItem(panel, x, y);
+                            preview.dropAssignment(action, point.x, point.y); panel.clearAssignment();
+                        }
+                        onDragCanceled: panel.clearAssignment()
+                    }
+                }
             }
             Column {
                 visible: panel.editingSlot < 0 && panel.tab === 1
                 width: parent.width; spacing: Commons.Style.space(14)
                 EditorLabel { text: "Wheel size · " + Math.round(Commons.Style.space(panel.diameter)) + " px" }
+                Row {
+                    width: parent.width; spacing: Commons.Style.space(6)
+                    Repeater {
+                        model: panel.sizePresets
+                        delegate: EditorButton {
+                            required property var modelData
+                            objectName: "orb-size-" + modelData.name.toLowerCase()
+                            width: (parent.width - parent.spacing * 2) / 3; text: modelData.name
+                            selected: panel.diameter === modelData.value; enabled: !panel.busy
+                            onClicked: panel.diameter = modelData.value
+                        }
+                    }
+                }
                 Item {
                     id: sizeControl
                     width: parent.width; height: Commons.Style.space(34); activeFocusOnTab: true
@@ -345,6 +411,17 @@ FocusScope {
         enabled: panel.visible && panel.openingHeight === 0
         // Capture the rendered layout, after the columns have been polished.
         function onFrameSwapped() { panel.openingHeight = panel.implicitHeight; }
+    }
+    Rectangle {
+        visible: panel.draggedAction !== null
+        x: panel.dragPosition.x + Commons.Style.space(10); y: panel.dragPosition.y + Commons.Style.space(10)
+        width: Commons.Style.space(40); height: width; z: 20; radius: Commons.Style.cornerRadius
+        color: Commons.Color.menu.selectedBackground
+        border.width: 1; border.color: Commons.Color.menu.selectedBorder
+        ActionIcon {
+            anchors.centerIn: parent; width: Commons.Style.space(26); height: width
+            name: panel.draggedAction ? panel.draggedAction.icon : "app"; appSource: panel.draggedIconSource
+        }
     }
     Connections {
         target: panel.Window.window

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Choose Small, Medium or Large wheel sizes, with fine adjustment for custom sizes.
+- Browse actions beside the wheel and drag apps, shortcuts or submenus directly onto slots; click and keyboard assignment remain available.
 - Arrange shortcuts by dragging around a wheel preview, with keyboard and button alternatives.
 - Change the opening shortcut and desktop right-click in Settings, with validation and conflict checks before saving.
 - Create and edit custom commands, including separate arguments and an icon picker.

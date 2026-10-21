@@ -2,12 +2,14 @@
 
 **Interaction inspiration: Tangerine for Mac**, as specified by the user. Orb's QML implementation and general-purpose line icons are original; the agent marks below are third-party branding. No Tangerine code, artwork or branding is included.
 
+Size presets and direct assignment from an action picker also take interaction inspiration from [Logitech Actions Ring](https://support.logi.com/hc/en-gb/articles/17844647906967-Actions-Ring), suggested by the user. Orb implements these interactions independently in Omarchy's hosted QML.
+
 Template authorship: Tom Ballard, 2026, MIT. Project author: Tom Ballard.
 - Plugin conventions: [Build Omarchy Plugins](https://github.com/tcballard/build-omarchy-plugins).
 - Community badge: [omarchy-badges](https://github.com/tcballard/omarchy-badges), pinned to 75975e5b5bf75e7ede3764bcd2950046f7abfe2c.
 - Test-only virtual pointer protocol: copyright 2019 Josef Gajdusek, MIT. Full licence remains in tests/virtual-pointer.xml. [Upstream protocol](https://gitlab.freedesktop.org/wlroots/wlr-protocols/-/blob/master/unstable/wlr-virtual-pointer-unstable-v1.xml).
 
-`preview.png` is a real cropped XPS desktop capture of Orb, including a small portion of the active wallpaper. Tom Ballard confirmed on 2026-10-19 that he made the wallpaper and owns or has permission to submit the plugin and preview assets. It is a product screenshot, not a separately distributed wallpaper asset. Other local test captures remain under ignored `artifacts/` and are not published with the source.
+`preview.png` is a real cropped XPS desktop capture of Orb, including a small portion of the active wallpaper. Tom Ballard confirmed on 2026-10-19 that he made the wallpaper and owns or has permission to submit the plugin and preview assets. It is a product screenshot, not a separately distributed wallpaper asset. Unpublished local test captures remain under ignored `artifacts/`. The current Settings captures use the default six shortcuts in an owned Omadev session; dimensions and hashes are recorded in [the capture evidence](docs/CATALOG-ACCEPTANCE.json).
 
 ## Agent marks
 

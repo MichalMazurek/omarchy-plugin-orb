@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-21T11:52:53.068908+00:00",
+  "status": "passed-for-scope",
+  "source": {
+    "baseCommit": "db6b814031e1c5816004891a808a52fac51c545d",
+    "runtimeSha256": {
+      "ActionPicker.qml": "c5d7f12dd92bb6745ba72086cd1b036f9750c402e394586b06534ae351c6ba65",
+      "ActionEditor.qml": "e2944761f6de7fab506e0fb50fdd4a1d7f7fedb6a622f48870e17c15b616730b",
+      "SettingsPanel.qml": "27198d42e358117b9bfa524a7d0eee02fe01b1ee601beba4d629cd3598c89c1f",
+      "WheelPreview.qml": "1c2097e3832e315dddf20cfe963fdade24e9074e97d9141b34b16bd2ce8b391f",
+      "Wheel.qml": "7070ce362244b3e1a062eb3e763ed5d6fe39dfb66339338c11b0be835e43e48e",
+      "Model.js": "05e47d923630afd2481f2ace6a189ea68499091b435ed7e2d9772747c35cc3bc"
+    }
+  },
+  "omarchyCommit": "57e4d3d1294e02dd3866a066e2f7276bd86c9938",
+  "validation": [
+    {
+      "command": "./tests/native",
+      "result": "passed"
+    },
+    {
+      "command": "node tests/editor-live.cjs --catalog-only",
+      "runs": [
+        {
+          "display": {
+            "width": 1900,
+            "height": 1150,
+            "scale": 1
+          },
+          "result": "passed",
+          "checks": [
+            "Small, Medium and Large stage exact sizes without resizing Settings; Cancel preserves the saved size",
+            "Dragging from the searchable catalog assigns a draft slot; dropping in the centre or outside cancels; Cancel preserves the file",
+            "Several catalog assignments and a size preset save/reopen together, including submenus and app IDs; metadata and click/keyboard alternatives work"
+          ]
+        },
+        {
+          "display": {
+            "width": 640,
+            "height": 760,
+            "scale": 1
+          },
+          "result": "passed",
+          "checks": [
+            "Small, Medium and Large stage exact sizes without resizing Settings; Cancel preserves the saved size",
+            "Dragging from the searchable catalog assigns a draft slot; dropping in the centre or outside cancels; Cancel preserves the file",
+            "Several catalog assignments and a size preset save/reopen together, including submenus and app IDs; metadata and click/keyboard alternatives work"
+          ]
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "file": "docs/catalog-settings.png",
+      "sha256": "de710cc5a2f917ee6b42e30482a6fb7407683bb4b03c23f54b7372ef2aeb951d",
+      "width": 793,
+      "height": 636,
+      "capture": "Native grim region capture inside owned omadev slot 4; no image composition."
+    },
+    {
+      "file": "docs/catalog-browser.png",
+      "sha256": "24a41b423b51d0e80d352d51a184be6c34484aaef41b2e3dcaeaf1794521a994",
+      "width": 793,
+      "height": 636,
+      "capture": "Native grim region capture inside owned omadev slot 4; no image composition."
+    }
+  ],
+  "fixture": "Default six shortcuts from config.example.json, with temporary test-only metadata. Original nested Orb settings restored.",
+  "limits": [
+    "Physical multi-monitor, hotplug and fractional scaling were not exercised."
+  ]
+}
