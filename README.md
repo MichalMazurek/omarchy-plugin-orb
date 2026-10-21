@@ -58,6 +58,8 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 
 ![Orb settings with a draggable wheel preview and the default six shortcuts](docs/settings-preview.png)
 
+Native capture and editor checks: [Settings acceptance evidence](docs/SETTINGS-ACCEPTANCE.json).
+
 Settings remain in `~/.config/omarchy/orb.json`, and can still be edited directly. See [the example](config.example.json). Six to eight top-level actions, one submenu level, the installed-agent menu (`"menu": "agents"`), size, animation, shortcut and desktop activation are supported. The default diameter is 240 theme units. App choices store a `desktopId` and launch through Quattro’s app library; icons follow the installed application. Custom commands run as argument arrays without shell-string evaluation. Orb preserves unrelated settings and metadata on moved or edited actions, and rejects conflicting external edits. Invalid configuration retains the last valid actions and shows an error hint.
 
 Desktop right-click uses Hyprland’s auto-consuming binding: app, panel and widget clicks pass through. It replaces the wallpaper’s right-double-click theme gesture; Themes remains available as a shortcut. Conservative panel bounds, including the dock’s transparent area, are excluded.

@@ -1,0 +1,88 @@
+{
+  "status": "passed",
+  "input_commit": "9d972cced0e95c8cba2547da9ecf430f4a69d473",
+  "date": "2026-10-21T02:12:27.427Z",
+  "platform": {
+    "environment": "Isolated omadev Hyprland session; no host input capture",
+    "omarchy_commit": "57e4d3d1294e02dd3866a066e2f7276bd86c9938",
+    "hyprland_version": "0.56.2",
+    "hyprland_commit": "efb50993780079460b0cbed1363e2166a2de1d9f",
+    "displays": [
+      {
+        "width": 1900,
+        "height": 1150,
+        "scale": 1
+      },
+      {
+        "width": 640,
+        "height": 760,
+        "scale": 1
+      }
+    ]
+  },
+  "checks": [
+    {
+      "command": "./tests/run",
+      "result": "passed",
+      "details": "27 Node fixture tests plus existing geometry/config checks and new editor merge/shortcut checks"
+    },
+    {
+      "command": "./tests/native",
+      "result": "passed",
+      "details": "Portable suite, desktop-hit-test Lua fixture, installed manifest validation and Qt parsing for every QML file"
+    },
+    {
+      "command": "node tests/editor-live.cjs",
+      "result": "passed",
+      "display": {
+        "width": 1900,
+        "height": 1150,
+        "scale": 1
+      },
+      "results": [
+        "Real pointer drag changes the draft; Cancel leaves the saved arrangement unchanged",
+        "Keyboard and pointer reordering save/reopen correctly, retain metadata, and unchanged Save finishes",
+        "Opening controls persist, bindings update and recover after reload, invalid keys are blocked, conflicts preserve the file and working bindings",
+        "Custom command editor saves and launches a program with exact arguments, including spaces and shell punctuation",
+        "Submenu actions can be edited, added, reordered, removed, saved and launched; nested Cancel discards its draft",
+        "The new editor retains add/save/reopen/remove from six to eight shortcuts and prevents fewer than six",
+        "Settings remain inside the nested monitor at all four pointer corners"
+      ]
+    },
+    {
+      "command": "node tests/editor-live.cjs",
+      "result": "passed",
+      "display": {
+        "width": 640,
+        "height": 760,
+        "scale": 1
+      },
+      "results": [
+        "Real pointer drag changes the draft; Cancel leaves the saved arrangement unchanged",
+        "Keyboard and pointer reordering save/reopen correctly, retain metadata, and unchanged Save finishes",
+        "Opening controls persist, bindings update and recover after reload, invalid keys are blocked, conflicts preserve the file and working bindings",
+        "Custom command editor saves and launches a program with exact arguments, including spaces and shell punctuation",
+        "Submenu actions can be edited, added, reordered, removed, saved and launched; nested Cancel discards its draft",
+        "The new editor retains add/save/reopen/remove from six to eight shortcuts and prevents fewer than six",
+        "Settings remain inside the nested monitor at all four pointer corners"
+      ]
+    },
+    {
+      "check": "Dark/light shell palette and repeated preview reopening",
+      "result": "passed",
+      "details": "Live shell palette IPC, visual inspection and restoration of the starting palette"
+    }
+  ],
+  "preview": {
+    "path": "docs/settings-preview.png",
+    "sha256": "1e5e3a8e75e714b4491903698ff7096b3ed67beb11becae5aa7d49147dedc46e",
+    "capture": "grim region of the actual settings surface in the owned omadev nest; default six shortcuts, original dark palette; no image editing"
+  },
+  "preservation": "Each live run restored the nest config. Host Orb settings and the existing modified feature/shortcut-wheel checkout were not changed.",
+  "not_run": [
+    "Physical shortcut key presses",
+    "Multiple physical monitors and hotplug",
+    "Fractional output scaling",
+    "Full desktop/application theme retinting"
+  ]
+}
