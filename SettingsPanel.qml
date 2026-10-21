@@ -110,7 +110,8 @@ FocusScope {
         return { x: p.x, y: p.y, diameter: preview.width, dragging: preview.dragging, selected: selectedSlot };
     }
     function layoutStatus() {
-        return { bodyX: body.x, bodyY: body.y, bodyWidth: body.width, bodyHeight: body.height, scroll: body.contentY,
+        return { bodyX: body.x, bodyY: body.y, bodyWidth: body.width, bodyHeight: body.height,
+            contentHeight: body.contentHeight, contentWidth: bodyColumn.width, scroll: body.contentY,
             tabY: header.y + header.height - tabRow.height / 2 };
     }
     function controls() {
@@ -188,12 +189,22 @@ FocusScope {
             }
         }
         Controls.ScrollBar.vertical: Controls.ScrollBar {
-            policy: Controls.ScrollBar.AsNeeded
-            contentItem: Rectangle { implicitWidth: Commons.Style.space(4); radius: width / 2; color: Commons.Util.alpha(Commons.Color.menu.text, 0.45) }
+            id: bodyScrollBar
+            objectName: "orb-settings-scrollbar"
+            width: Commons.Style.space(10); padding: Commons.Style.space(2)
+            policy: body.contentHeight > body.height + 1 ? Controls.ScrollBar.AlwaysOn : Controls.ScrollBar.AlwaysOff
+            minimumSize: Math.min(1, Commons.Style.space(28) / Math.max(1, height))
+            enabled: !panel.busy
+            contentItem: Rectangle {
+                objectName: "orb-settings-scroll-thumb"
+                implicitWidth: Commons.Style.space(4); implicitHeight: Commons.Style.space(28)
+                radius: width / 2; color: Commons.Util.alpha(Commons.Color.menu.text, 0.45)
+            }
         }
         Column {
             id: bodyColumn
-            width: body.width; spacing: Commons.Style.space(10)
+            x: bodyScrollBar.mirrored ? bodyScrollBar.width + Commons.Style.space(6) : 0
+            width: Math.max(0, body.width - bodyScrollBar.width - Commons.Style.space(6)); spacing: Commons.Style.space(10)
             Item {
                 visible: panel.editingSlot < 0 && panel.tab === 0
                 width: parent.width
