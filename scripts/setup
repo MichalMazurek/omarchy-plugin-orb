@@ -89,6 +89,11 @@ for part in "${parts[@]}"; do
   canonical+="${canonical:+ + }$part"
 done
 [[ -n $key && $mask -ge 64 ]] || { echo 'Use a Super shortcut with one key.' >&2; exit 1; }
+canonical=SUPER
+(( (mask & 4) == 0 )) || canonical+=' + CTRL'
+(( (mask & 8) == 0 )) || canonical+=' + ALT'
+(( (mask & 1) == 0 )) || canonical+=' + SHIFT'
+canonical+=" + $key"
 desktop_click=$(jq -r '.desktopRightClick == true' "$config")
 binds=$(hyprctl binds -j)
 conflicts=$(jq --arg key "$key" --argjson mask "$mask" '[.[] | select((.key | ascii_upcase) == $key and .modmask == $mask and ((.description // "") | startswith("Orb shortcut wheel [orb:") | not))] | length' <<< "$binds")
@@ -102,27 +107,44 @@ code="local token = \"$token\"
 local r = rawget(_G, '__orb_native_bindings')
 if not r then r = { dead = {} }; _G.__orb_native_bindings = r end
 if r.dead[token] or (r.latest and r.latest > token) then return end
-r.latest = token
+local retained = {}
 local handles = {}
-local ok, failure = pcall(function()
+-- Bind:remove() removes every binding for the same key on current Hyprland.
+-- Reuse unchanged keys instead of staging duplicates and deleting both.
+for owner, previous in pairs(r) do
+  if type(previous) == 'table' and owner ~= 'dead' then
+    if previous.shortcut == \"$canonical\" then handles[1] = previous[1]; retained[previous[1]] = true end
+"
+if [[ $desktop_click == true ]]; then
+  code+=$'    if previous.desktopClick and previous[2] then handles[2] = previous[2]; retained[previous[2]] = true end\n'
+fi
+code+=$'    -- Old registry entries have no key metadata. Migrate them once.\n    if not previous.shortcut then\n      for _, bind in ipairs(previous) do pcall(function() bind:remove() end); retained[bind] = true end\n    end\n  end\nend\nlocal created = {}\nlocal ok, failure = pcall(function()\n'
+code+="
+if not handles[1] then
 handles[1] = assert(hl.bind(\"$canonical\", function()
   hl.exec_cmd('omarchy-shell shell toggle io.github.tcballard.orb')
 end, { description = 'Orb shortcut wheel [orb:' .. token .. ']' }))
+created[#created + 1] = handles[1]
+end
 "
 if [[ $desktop_click == true ]]; then
-  code+=$'\nlocal function desktopBind()\n'
+  code+=$'\nif not handles[2] then\nlocal function desktopBind()\n'
   code+=$(sed "s/description = \"Orb on empty desktop\"/description = \"Orb on empty desktop [orb:$token]\"/" "$repo/desktop-click.lua")
-  code+=$'\nend\nhandles[2] = assert(desktopBind())\n'
+  code+=$'\nend\nhandles[2] = assert(desktopBind())\ncreated[#created + 1] = handles[2]\nend\n'
 fi
-code+=$'\nend)\nif not ok then\n  for _, bind in ipairs(handles) do pcall(function() bind:remove() end) end\n  error(failure)\nend\nfor owner, previous in pairs(r) do\n  if type(previous) == "table" and owner ~= "dead" then\n    for _, bind in ipairs(previous) do pcall(function() bind:remove() end) end\n    r[owner] = nil\n  end\nend\nr[token] = handles\n'
+code+=$'\nend)\nif not ok then\n  for _, bind in ipairs(created) do pcall(function() bind:remove() end) end\n  error(failure)\nend\nfor owner, previous in pairs(r) do\n  if type(previous) == "table" and owner ~= "dead" then\n    for _, bind in ipairs(previous) do if not retained[bind] then pcall(function() bind:remove() end) end end\n    r[owner] = nil\n  end\nend\n'
+code+="handles.shortcut = \"$canonical\"; handles.desktopClick = $desktop_click
+r.latest = token
+r[token] = handles
+"
 output=$(hyprctl eval "$code")
 [[ $output != *error:* ]] || { printf '%s\n' "$output" >&2; exit 1; }
 # hyprctl can return success for Lua failures; require observable registration.
-hyprctl binds -j | jq -e --arg desc "Orb shortcut wheel [orb:$token]" '[.[] | select(.description == $desc)] | length == 1' >/dev/null || {
+hyprctl binds -j | jq -e --arg key "$key" --argjson mask "$mask" '[.[] | select((.key | ascii_upcase) == $key and .modmask == $mask and ((.description // "") | startswith("Orb shortcut wheel [orb:")))] | length == 1' >/dev/null || {
   echo 'Orb shortcut registration did not complete.' >&2; exit 1;
 }
 if [[ $desktop_click == true ]]; then
-  hyprctl binds -j | jq -e --arg desc "Orb on empty desktop [orb:$token]" '[.[] | select(.description == $desc)] | length == 1' >/dev/null || {
+  hyprctl binds -j | jq -e '[.[] | select(.key == "mouse:273" and .modmask == 0 and ((.description // "") | startswith("Orb on empty desktop [orb:")))] | length == 1' >/dev/null || {
     echo 'Orb desktop activation did not complete.' >&2; exit 1;
   }
 fi

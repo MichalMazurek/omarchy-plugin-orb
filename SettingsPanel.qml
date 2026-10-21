@@ -1,163 +1,142 @@
 import QtQuick
+import QtQuick.Window
+import QtQuick.Controls as Controls
 import qs.Commons as Commons
 import qs.Ui
+import "Model.js" as Model
 
 FocusScope {
     id: panel
     property int diameter: 240
     property bool animation: true
+    property string shortcut: "SUPER + ALT + O"
+    property bool desktopRightClick: false
     property var actions: []
+    property var actionOrigins: []
+    property var childOrigins: []
     property var original: ({})
     property var choices: []
     property var appLibrary: null
-    property string shortcut: ""
     property string error: ""
     property bool busy: false
     property bool setupFailed: false
     property int tab: 0
-    property int cursor: 2
+    property int selectedSlot: 0
     property int editingSlot: -1
-    property int pickerCursor: 0
+    property real maximumHeight: 800
+    property alias editor: actionEditor
     readonly property var positions: actions.length === 8 ? ["Top", "Upper right", "Right", "Lower right", "Bottom", "Lower left", "Left", "Upper left"]
         : actions.length === 7 ? ["Top", "Upper right", "Right", "Lower right", "Lower left", "Left", "Upper left"]
         : ["Top", "Upper right", "Lower right", "Bottom", "Lower left", "Upper left"]
-    readonly property var filteredChoices: choices.filter(function(row) {
-        return (row.title + " " + row.detail).toLowerCase().indexOf(search.text.trim().toLowerCase()) >= 0;
-    })
-    readonly property int controlCount: tab === 0 ? actions.length + 5 : 6
-    onCursorChanged: if (tab === 0 && cursor >= 2 && cursor < actions.length + 2) slotList.positionViewAtIndex(cursor - 2, ListView.Contain)
+    readonly property bool wide: width >= Commons.Style.space(580)
+    readonly property var shortcutCheck: Model.shortcut(shortcut)
+    readonly property var filteredChoices: actionEditor.filteredChoices
+    implicitHeight: Math.min(maximumHeight, header.height + bodyColumn.height + footer.height + Commons.Style.space(64))
+    height: implicitHeight
     signal saveRequested()
     signal canceled()
     signal retrySetup()
-    implicitHeight: content.height + Commons.Style.space(36)
-    height: implicitHeight
 
     function begin(config, catalog) {
         original = JSON.parse(JSON.stringify(config));
         diameter = config.diameter; animation = config.animation;
+        shortcut = config.shortcut || "SUPER + ALT + O"; desktopRightClick = config.desktopRightClick === true;
         actions = JSON.parse(JSON.stringify(config.actions)); choices = catalog;
-        tab = 0; cursor = 2; editingSlot = -1; search.text = "";
-        search.focus = false; navigation.focus = true;
+        actionOrigins = actions.map(function(a, i) { return i; });
+        childOrigins = actions.map(function(a) { return a.children ? a.children.map(function(c, i) { return i; }) : []; });
+        tab = 0; selectedSlot = 0; editingSlot = -1; body.contentY = 0;
+        Qt.callLater(function() { slotNavigation.forceActiveFocus(); });
     }
-    function draft() { return { diameter: diameter, animation: animation, actions: actions }; }
+    function draft() { return { diameter: diameter, animation: animation, actions: actions,
+        shortcut: shortcutCheck.error ? shortcut : shortcutCheck.value, desktopRightClick: desktopRightClick,
+        actionOrigins: actionOrigins, childOrigins: childOrigins }; }
     function appIcon(action) {
         if (!action.desktopId) return "";
         for (var i = 0; i < choices.length; i++)
             if (choices[i].action.desktopId === action.desktopId) return choices[i].iconSource || "";
         return "";
     }
-    function adjust(delta) { diameter = Math.max(220, Math.min(600, diameter + delta)); }
+    function selectTab(index) {
+        tab = index; body.contentY = 0;
+        Qt.callLater(function() {
+            if (index === 0) slotNavigation.forceActiveFocus();
+            else if (index === 1) sizeControl.forceActiveFocus();
+            else openingKey.forceActiveFocus();
+        });
+    }
     function editSlot(index) {
         if (busy) return;
-        editingSlot = index; pickerCursor = 0; search.text = "";
-        Qt.callLater(function() { search.forceActiveFocus(); });
+        editingSlot = index; body.contentY = 0;
+        actionEditor.begin(actions[index] || null, choices, 0, childOrigins[index] || []);
     }
     function backToSlots() {
-        cursor = editingSlot + 2; editingSlot = -1;
-        search.focus = false; navigation.forceActiveFocus();
+        selectedSlot = Math.min(editingSlot, actions.length - 1); editingSlot = -1;
+        body.contentY = 0; slotNavigation.forceActiveFocus();
     }
     function addSlot() { if (actions.length < 8) editSlot(actions.length); }
     function removeSlot(index) {
         if (busy || actions.length <= 6 || index < 0 || index >= actions.length) return;
-        var copy = actions.slice(); copy.splice(index, 1); actions = copy;
-        cursor = Math.min(index, actions.length - 1) + 2; navigation.forceActiveFocus();
+        var copy = actions.slice(), order = actionOrigins.slice(), childOrder = childOrigins.slice();
+        copy.splice(index, 1); order.splice(index, 1); childOrder.splice(index, 1);
+        actions = copy; actionOrigins = order; childOrigins = childOrder;
+        selectedSlot = Math.min(index, actions.length - 1); slotNavigation.forceActiveFocus();
     }
-    function choose(index) {
-        if (busy || editingSlot < 0 || index < 0 || index >= filteredChoices.length) return;
-        var copy = actions.slice();
-        copy[editingSlot] = JSON.parse(JSON.stringify(filteredChoices[index].action));
-        actions = copy; backToSlots();
+    function chooseAction(value, childrenOrder) {
+        var copy = actions.slice(), order = actionOrigins.slice(), childOrder = childOrigins.slice();
+        if (editingSlot === actions.length) order.push(-1);
+        copy[editingSlot] = value; childOrder[editingSlot] = childrenOrder || [];
+        actions = copy; actionOrigins = order; childOrigins = childOrder; backToSlots();
     }
-    function movePicker(delta) {
-        if (!filteredChoices.length) return;
-        pickerCursor = (pickerCursor + delta + filteredChoices.length) % filteredChoices.length;
-        choiceList.positionViewAtIndex(pickerCursor, ListView.Contain);
+    function moveSlot(from, to) {
+        if (busy || from < 0 || to < 0 || from >= actions.length || to >= actions.length) return;
+        actions = Model.move(actions, from, to); actionOrigins = Model.move(actionOrigins, from, to); childOrigins = Model.move(childOrigins, from, to);
+        selectedSlot = to; slotNavigation.forceActiveFocus();
     }
-    function activateControl() {
-        if (cursor < 2) { tab = cursor; cursor = 2; }
-        else if (tab === 0 && cursor < actions.length + 2) editSlot(cursor - 2);
-        else if (tab === 0 && cursor === actions.length + 2) addSlot();
-        else if (tab === 1 && cursor === 3) animation = !animation;
-        else if (cursor === controlCount - 2) canceled();
-        else if (cursor === controlCount - 1) saveRequested();
+    function toggleModifier(modifier) {
+        var checked = Model.shortcut(shortcut), mask = checked.error ? 72 : checked.mask;
+        mask ^= modifier;
+        var tokens = ["SUPER"];
+        if (mask & 4) tokens.push("CTRL"); if (mask & 8) tokens.push("ALT"); if (mask & 1) tokens.push("SHIFT");
+        tokens.push(openingKey.text.toUpperCase() || "O"); shortcut = tokens.join(" + ");
     }
-    // Keep a real navigation focus target: forcing focus on the scope alone
-    // would return it to the hidden search field after leaving the picker.
-    Item { id: navigation; focus: true }
-    Keys.onPressed: event => {
-        if (panel.busy) { event.accepted = true; return; }
-        if (event.key === Qt.Key_Escape) {
-            if (panel.editingSlot >= 0) panel.backToSlots(); else panel.canceled();
-        } else if (panel.editingSlot >= 0) {
-            if (event.key === Qt.Key_Down) panel.movePicker(1);
-            else if (event.key === Qt.Key_Up) panel.movePicker(-1);
-            else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) panel.choose(panel.pickerCursor);
-            else return;
-        } else if (event.key === Qt.Key_Delete && panel.tab === 0) panel.removeSlot(panel.cursor - 2);
-        else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab || event.key === Qt.Key_Down || event.key === Qt.Key_Up) {
-            var back = event.key === Qt.Key_Backtab || event.key === Qt.Key_Up || (event.key === Qt.Key_Tab && (event.modifiers & Qt.ShiftModifier));
-            panel.cursor = (panel.cursor + (back ? panel.controlCount - 1 : 1)) % panel.controlCount;
-        } else if (panel.tab === 1 && panel.cursor === 2 && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) panel.adjust(event.key === Qt.Key_Right ? 10 : -10);
-        else if (event.key === Qt.Key_S && (event.modifiers & Qt.ControlModifier)) panel.saveRequested();
-        else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) panel.activateControl();
-        else return;
-        event.accepted = true;
+    function changeKey(value) {
+        var tokens = shortcut.split("+"); tokens[tokens.length - 1] = value.toUpperCase().trim(); shortcut = tokens.join(" + ");
     }
-
-    component Label: Text {
-        textFormat: Text.PlainText
-        color: Commons.Color.menu.text
-        font.family: Commons.Style.font.menuFamily
-        font.pixelSize: Commons.Style.space(12)
-        elide: Text.ElideRight
+    function requestSave() { if (!busy && !shortcutCheck.error && editingSlot < 0) saveRequested(); }
+    function previewStatus() {
+        var p = preview.mapToItem(panel, 0, 0);
+        return { x: p.x, y: p.y, diameter: preview.width, dragging: preview.dragging, selected: selectedSlot };
     }
-    component ChoiceRow: Rectangle {
-        id: row
-        property string title: ""
-        property string detail: ""
-        property string iconName: "app"
-        property url iconSource: ""
-        property string number: ""
-        property bool chosen: false
-        property bool removable: false
-        signal clicked()
-        signal removed()
-        height: Commons.Style.space(42)
-        radius: Commons.Style.cornerRadius
-        color: mouse.containsMouse || chosen ? Commons.Color.menu.selectedBackground : Commons.Util.alpha(Commons.Color.menu.text, 0.025)
-        border.width: chosen ? 1 : 0
-        border.color: Commons.Color.menu.selectedBorder
-        Label {
-            x: Commons.Style.space(9); anchors.verticalCenter: parent.verticalCenter
-            visible: row.number !== ""; text: row.number
-            color: Commons.Util.alpha(Commons.Color.menu.text, 0.5)
-            font.pixelSize: Commons.Style.space(10)
-        }
-        ActionIcon {
-            x: Commons.Style.space(row.number ? 25 : 10); anchors.verticalCenter: parent.verticalCenter
-            width: Commons.Style.space(21); height: width
-            name: row.iconName; appSource: row.iconSource
-            selected: row.chosen || mouse.containsMouse
-            ink: Commons.Color.menu.text
-        }
-        Column {
-            x: Commons.Style.space(row.number ? 57 : 42); anchors.verticalCenter: parent.verticalCenter
-            width: parent.width - x - Commons.Style.space(25); spacing: 2
-            Label { width: parent.width; text: row.title; color: row.chosen || mouse.containsMouse ? "#ffffff" : Commons.Color.menu.text }
-            Label {
-                width: parent.width; text: row.detail; font.pixelSize: Commons.Style.space(9)
-                color: Commons.Util.alpha(Commons.Color.menu.text, 0.55)
+    function layoutStatus() {
+        return { bodyX: body.x, bodyY: body.y, bodyWidth: body.width, bodyHeight: body.height, scroll: body.contentY,
+            tabY: header.y + header.height - tabRow.height / 2 };
+    }
+    function controls() {
+        var rows = [];
+        function visit(item) {
+            if (!item.visible) return;
+            if (item.objectName && item.objectName.indexOf("orb-") === 0) {
+                var p = item.mapToItem(panel, 0, 0);
+                rows.push({ name: item.objectName, x: p.x, y: p.y, width: item.width, height: item.height, enabled: item.enabled });
             }
+            for (var i = 0; i < item.children.length; i++) visit(item.children[i]);
         }
-        Label { visible: !row.removable; anchors.right: parent.right; anchors.rightMargin: 12; anchors.verticalCenter: parent.verticalCenter; text: "›"; color: Commons.Color.accent }
-        MouseArea { id: mouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; enabled: !panel.busy; onClicked: row.clicked() }
-        Button {
-            visible: row.removable; anchors.right: parent.right; anchors.rightMargin: 3; anchors.verticalCenter: parent.verticalCenter
-            width: Commons.Style.space(24); text: "×"; tooltipText: "Remove slot"; enabled: !panel.busy
-            foreground: Commons.Color.menu.text; onClicked: row.removed()
+        visit(panel); return rows;
+    }
+    function reveal(item) {
+        var p = item.mapToItem(body.contentItem, 0, 0);
+        body.contentY = Math.max(0, Math.min(body.contentHeight - body.height,
+            p.y < body.contentY ? p.y : p.y + item.height > body.contentY + body.height ? p.y + item.height - body.height : body.contentY));
+    }
+    Keys.onPressed: event => {
+        if (busy) { event.accepted = true; return; }
+        if (editingSlot >= 0) return;
+        if (event.key === Qt.Key_Escape) { canceled(); event.accepted = true; }
+        else if (event.key === Qt.Key_S && (event.modifiers & Qt.ControlModifier)) { requestSave(); event.accepted = true; }
+        else if (tab === 0 && (event.modifiers & Qt.AltModifier) && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
+            moveSlot(selectedSlot, (selectedSlot + (event.key === Qt.Key_Right ? 1 : actions.length - 1)) % actions.length); event.accepted = true;
         }
     }
-
     Rectangle {
         anchors.fill: parent; radius: Commons.Style.cornerRadius
         color: Commons.Color.menu.background
@@ -165,158 +144,196 @@ FocusScope {
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onClicked: panel.forceActiveFocus() }
     }
     Column {
-        id: content
-        x: Commons.Style.space(18); y: x
-        width: parent.width - x * 2; spacing: Commons.Style.space(10)
-        Label {
-            width: parent.width
-            text: panel.editingSlot === panel.actions.length ? "Add slot " + (panel.editingSlot + 1) : panel.editingSlot >= 0 ? "Choose slot " + (panel.editingSlot + 1) : "Orb settings"
-            font.pixelSize: Commons.Style.space(18); font.weight: Font.DemiBold
-        }
-        Label {
-            width: parent.width
-            text: panel.editingSlot === panel.actions.length ? "Choose another app, plugin or shortcut"
-                : panel.editingSlot >= 0 ? panel.positions[panel.editingSlot] + " · " + panel.actions[panel.editingSlot].label
-                : "Your shortcuts, in your orbit."
-            font.pixelSize: Commons.Style.space(11); color: Commons.Util.alpha(Commons.Color.menu.text, 0.6)
+        id: header
+        x: Commons.Style.space(18); y: x; width: parent.width - x * 2; spacing: Commons.Style.space(10)
+        EditorLabel { width: parent.width; text: panel.editingSlot >= 0 ? actionEditor.pageTitle : "Orb settings"; font.pixelSize: Commons.Style.space(20); font.weight: Font.DemiBold }
+        EditorLabel {
+            width: parent.width; wrapMode: Text.WordWrap; opacity: 0.65
+            text: panel.editingSlot >= 0 ? (panel.editingSlot === panel.actions.length ? "Add a shortcut to your wheel" : "Slot " + (panel.editingSlot + 1) + " · " + panel.positions[panel.editingSlot])
+                : panel.tab === 0 ? "Choose your shortcuts and put them where you want them."
+                : panel.tab === 1 ? "Make the wheel feel at home on your desktop." : "Choose how you open Orb."
         }
         Row {
-            visible: panel.editingSlot < 0
-            width: parent.width; spacing: Commons.Style.space(6)
+            id: tabRow
+            visible: panel.editingSlot < 0; width: parent.width; spacing: Commons.Style.space(6)
             Repeater {
-                model: ["Slots", "Appearance"]
-                delegate: Button {
+                model: ["Shortcuts", "Appearance", "Opening"]
+                delegate: EditorButton {
                     required property int index
                     required property string modelData
-                    width: (content.width - parent.spacing) / 2
-                    text: modelData; selected: panel.tab === index; hasCursor: panel.cursor === index
-                    bordered: true; foreground: Commons.Color.menu.text; fontFamily: Commons.Style.font.menuFamily
-                    enabled: !panel.busy
-                    onClicked: { panel.tab = index; panel.cursor = 2; panel.forceActiveFocus(); }
+                    objectName: "orb-tab-" + index
+                    width: (header.width - parent.spacing * 2) / 3; text: modelData
+                    selected: panel.tab === index; enabled: !panel.busy
+                    onClicked: panel.selectTab(index)
                 }
             }
         }
-        Button {
-            visible: panel.setupFailed
-            width: parent.width; text: "Retry shortcut setup"; bordered: true
-            foreground: Commons.Color.menu.text; fontFamily: Commons.Style.font.menuFamily
-            onClicked: panel.retrySetup()
+    }
+    Flickable {
+        id: body
+        x: header.x; y: header.y + header.height + Commons.Style.space(14)
+        width: header.width; height: Math.max(1, footer.y - y - Commons.Style.space(12))
+        contentWidth: width; contentHeight: bodyColumn.height
+        clip: true; boundsBehavior: Flickable.StopAtBounds
+        WheelHandler {
+            target: null
+            enabled: !panel.busy && body.contentHeight > body.height
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onWheel: event => {
+                var delta = event.pixelDelta.y || event.angleDelta.y / 120 * Commons.Style.space(40);
+                body.contentY = Math.max(0, Math.min(body.contentHeight - body.height, body.contentY - delta));
+                event.accepted = true;
+            }
         }
-        ListView {
-            id: slotList
-            visible: panel.editingSlot < 0 && panel.tab === 0
-            width: parent.width; spacing: Commons.Style.space(4)
-            height: Math.min(6, panel.actions.length) * Commons.Style.space(46) - Commons.Style.space(4)
-            clip: true; boundsBehavior: Flickable.StopAtBounds
-            model: panel.actions
-                delegate: ChoiceRow {
-                    required property int index
-                    required property var modelData
-                    width: content.width; number: String(index + 1)
-                    title: modelData.label; detail: panel.positions[index]
-                    iconName: modelData.icon; iconSource: panel.appIcon(modelData); chosen: panel.cursor === index + 2
-                    removable: panel.actions.length > 6
-                    onClicked: panel.editSlot(index)
-                    onRemoved: panel.removeSlot(index)
-                }
-        }
-        Button {
-            visible: panel.editingSlot < 0 && panel.tab === 0
-            width: parent.width; text: panel.actions.length < 8 ? "+ Add slot · " + panel.actions.length + " / 8" : "8 / 8 slots"
-            enabled: !panel.busy && panel.actions.length < 8; bordered: true
-            hasCursor: panel.cursor === panel.actions.length + 2
-            foreground: Commons.Color.menu.text; fontFamily: Commons.Style.font.menuFamily
-            onClicked: panel.addSlot()
+        Controls.ScrollBar.vertical: Controls.ScrollBar {
+            policy: Controls.ScrollBar.AsNeeded
+            contentItem: Rectangle { implicitWidth: Commons.Style.space(4); radius: width / 2; color: Commons.Util.alpha(Commons.Color.menu.text, 0.45) }
         }
         Column {
-            visible: panel.editingSlot < 0 && panel.tab === 1
-            width: parent.width; spacing: Commons.Style.space(12)
-            Label { text: "Wheel size · " + Math.round(Commons.Style.space(panel.diameter)) + " px" }
+            id: bodyColumn
+            width: body.width; spacing: Commons.Style.space(10)
             Item {
-                width: parent.width; height: Commons.Style.space(30)
-                Rectangle {
-                    anchors.fill: parent; anchors.margins: -3; radius: Commons.Style.cornerRadius
-                    color: "transparent"; border.width: panel.cursor === 2 ? 1 : 0; border.color: Commons.Color.accent
+                visible: panel.editingSlot < 0 && panel.tab === 0
+                width: parent.width
+                height: panel.wide ? Math.max(previewColumn.height, slotColumn.height) : previewColumn.height + slotColumn.height + Commons.Style.space(14)
+                Column {
+                    id: previewColumn
+                    x: panel.wide ? 0 : (parent.width - width) / 2
+                    width: Math.min(Commons.Style.space(260), parent.width); spacing: Commons.Style.space(10)
+                    WheelPreview {
+                        id: preview
+                        width: parent.width; actions: panel.actions; selected: panel.selectedSlot; busy: panel.busy
+                        iconSources: panel.actions.map(function(a) { return panel.appIcon(a); })
+                        onPicked: index => panel.editSlot(index)
+                        onMoved: (from, to) => panel.moveSlot(from, to)
+                    }
+                    EditorLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: preview.caption; wrapMode: Text.WordWrap }
+                    EditorLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: "Drag to arrange · click to edit"; opacity: 0.65; font.pixelSize: Commons.Style.space(10) }
                 }
-                PanelSlider {
-                    anchors.fill: parent; enabled: !panel.busy
-                    minimum: 220; maximum: 600; step: 10; integer: true; value: panel.diameter
-                    trackColor: Commons.Util.alpha(Commons.Color.menu.text, 0.15)
-                    fillColor: Commons.Color.accent; knobColor: Commons.Color.accent
-                    onMoved: value => { panel.diameter = Math.round(value / 10) * 10; panel.cursor = 2; panel.forceActiveFocus(); }
+                Column {
+                    id: slotColumn
+                    x: panel.wide ? previewColumn.width + Commons.Style.space(18) : 0
+                    y: panel.wide ? 0 : previewColumn.height + Commons.Style.space(14)
+                    width: parent.width - x; spacing: Commons.Style.space(7)
+                    Item {
+                        id: slotNavigation
+                        width: parent.width; height: slotRows.height; focus: true; activeFocusOnTab: true
+                        Keys.onPressed: event => {
+                            if (event.modifiers & Qt.AltModifier) return;
+                            if (event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
+                                panel.selectedSlot = (panel.selectedSlot + (event.key === Qt.Key_Down ? 1 : panel.actions.length - 1)) % panel.actions.length;
+                                panel.reveal(slotRepeater.itemAt(panel.selectedSlot));
+                            }
+                            else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) panel.editSlot(panel.selectedSlot);
+                            else if (event.key === Qt.Key_Delete) panel.removeSlot(panel.selectedSlot);
+                            else return;
+                            event.accepted = true;
+                        }
+                        Column {
+                            id: slotRows
+                            width: parent.width; spacing: Commons.Style.space(4)
+                            Repeater {
+                                id: slotRepeater
+                                model: panel.actions
+                                delegate: EditorButton {
+                                    required property int index
+                                    required property var modelData
+                                    objectName: "orb-slot-" + index
+                                    width: slotRows.width; height: Commons.Style.space(40)
+                                    focusable: false; leftAlign: true; leftPadding: Commons.Style.space(40)
+                                    text: (index + 1) + " · " + modelData.label
+                                    tooltipText: panel.positions[index] || ""; selected: panel.selectedSlot === index; enabled: !panel.busy
+                                    ActionIcon { x: Commons.Style.space(10); anchors.verticalCenter: parent.verticalCenter; width: Commons.Style.space(20); height: width; name: modelData.icon; appSource: panel.appIcon(modelData); selected: panel.selectedSlot === index }
+                                    onClicked: { panel.selectedSlot = index; panel.editSlot(index); }
+                                }
+                            }
+                        }
+                    }
+                    Row {
+                        width: parent.width; spacing: Commons.Style.space(5)
+                        EditorButton { text: "←"; width: Commons.Style.space(38); tooltipText: "Move anticlockwise · Alt+Left"; enabled: !panel.busy; onClicked: panel.moveSlot(panel.selectedSlot, (panel.selectedSlot + panel.actions.length - 1) % panel.actions.length) }
+                        EditorButton { text: "→"; width: Commons.Style.space(38); tooltipText: "Move clockwise · Alt+Right"; enabled: !panel.busy; onClicked: panel.moveSlot(panel.selectedSlot, (panel.selectedSlot + 1) % panel.actions.length) }
+                        EditorButton { text: "Remove"; enabled: !panel.busy && panel.actions.length > 6; onClicked: panel.removeSlot(panel.selectedSlot) }
+                    }
+                    EditorButton { objectName: "orb-add-slot"; width: parent.width; text: panel.actions.length < 8 ? "+ Add shortcut · " + panel.actions.length + " / 8" : "8 / 8 shortcuts"; enabled: !panel.busy && panel.actions.length < 8; onClicked: panel.addSlot() }
+                    EditorLabel { width: parent.width; wrapMode: Text.WordWrap; text: "↑ ↓ select · Enter edits · Alt+← → moves"; opacity: 0.65; font.pixelSize: Commons.Style.space(10) }
                 }
             }
-            Item {
-                width: parent.width; height: Commons.Style.space(40)
-                Label { anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter; text: "Opening animation" }
-                ToggleSwitch {
-                    anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter
-                    checked: panel.animation; busy: panel.busy; hasCursor: panel.cursor === 3; foreground: Commons.Color.menu.text
-                    onToggled: { panel.animation = !panel.animation; panel.cursor = 3; panel.forceActiveFocus(); }
+            Column {
+                visible: panel.editingSlot < 0 && panel.tab === 1
+                width: parent.width; spacing: Commons.Style.space(14)
+                EditorLabel { text: "Wheel size · " + Math.round(Commons.Style.space(panel.diameter)) + " px" }
+                Item {
+                    id: sizeControl
+                    width: parent.width; height: Commons.Style.space(34); activeFocusOnTab: true
+                    Keys.onLeftPressed: panel.diameter = Math.max(220, panel.diameter - 10)
+                    Keys.onRightPressed: panel.diameter = Math.min(600, panel.diameter + 10)
+                    Rectangle { anchors.fill: parent; radius: Commons.Style.cornerRadius; color: "transparent"; border.width: sizeControl.activeFocus ? 1 : 0; border.color: Commons.Color.accent }
+                    PanelSlider {
+                        anchors.fill: parent; enabled: !panel.busy
+                        minimum: 220; maximum: 600; step: 10; integer: true; value: panel.diameter
+                        trackColor: Commons.Util.alpha(Commons.Color.menu.text, 0.15); fillColor: Commons.Color.accent; knobColor: Commons.Color.accent
+                        onMoved: value => { panel.diameter = Math.round(value / 10) * 10; sizeControl.forceActiveFocus(); }
+                    }
                 }
+                EditorButton { text: "Opening animation · " + (panel.animation ? "On" : "Off"); selected: panel.animation; enabled: !panel.busy; onClicked: panel.animation = !panel.animation }
+                EditorLabel { width: parent.width; text: "Follows your Omarchy theme and reduced-motion setting."; wrapMode: Text.WordWrap; opacity: 0.65 }
             }
-            Label {
-                width: parent.width; text: "Open with " + panel.shortcut
-                font.pixelSize: Commons.Style.space(11); color: Commons.Util.alpha(Commons.Color.menu.text, 0.6)
+            Column {
+                visible: panel.editingSlot < 0 && panel.tab === 2
+                width: parent.width; spacing: Commons.Style.space(12)
+                EditorLabel { text: "Keyboard shortcut"; font.weight: Font.DemiBold }
+                Row {
+                    width: parent.width; spacing: Commons.Style.space(6)
+                    Repeater {
+                        model: [{ label: "Super", bit: 64 }, { label: "Ctrl", bit: 4 }, { label: "Alt", bit: 8 }, { label: "Shift", bit: 1 }]
+                        delegate: EditorButton {
+                            required property var modelData
+                            objectName: "orb-modifier-" + modelData.label
+                            text: modelData.label; selected: modelData.bit === 64 || !!((panel.shortcutCheck.mask || 0) & modelData.bit)
+                            enabled: !panel.busy && modelData.bit !== 64; onClicked: panel.toggleModifier(modelData.bit)
+                        }
+                    }
+                }
+                EditorLabel { text: "Key · letter, number, F1–F12 or Space" }
+                TextField {
+                    id: openingKey
+                    objectName: "orb-opening-key"
+                    width: Math.min(parent.width, Commons.Style.space(180)); maximumLength: 5; enabled: !panel.busy
+                    text: panel.shortcut.split("+").slice(-1)[0].trim(); placeholderText: "O"
+                    onTextEdited: panel.changeKey(text)
+                }
+                EditorLabel { width: parent.width; wrapMode: Text.WordWrap; text: panel.shortcutCheck.error || panel.shortcutCheck.value; color: panel.shortcutCheck.error ? Commons.Color.urgent : Commons.Color.menu.text }
+                EditorLabel { width: parent.width; wrapMode: Text.WordWrap; text: "Orb checks for shortcut conflicts before saving."; opacity: 0.65 }
+                EditorButton { objectName: "orb-desktop-click"; text: "Right-click on empty desktop · " + (panel.desktopRightClick ? "On" : "Off"); selected: panel.desktopRightClick; enabled: !panel.busy; onClicked: panel.desktopRightClick = !panel.desktopRightClick }
+                EditorLabel { width: parent.width; wrapMode: Text.WordWrap; text: "Applications keep their context menus. On the wallpaper, Orb replaces the right-double-click theme gesture."; opacity: 0.65 }
+            }
+            ActionEditor {
+                id: actionEditor
+                visible: panel.editingSlot >= 0; width: parent.width; height: visible ? implicitHeight : 0; busy: panel.busy
+                onChosen: (action, origins) => panel.chooseAction(action, origins)
+                onCanceled: panel.backToSlots()
             }
         }
-        Column {
-            visible: panel.editingSlot >= 0
-            width: parent.width; spacing: Commons.Style.space(8)
-            TextField {
-                id: search
-                width: parent.width; placeholderText: "Search Apps, Plugins, or Shortcuts…"; enabled: !panel.busy
-                font.pixelSize: Commons.Style.space(11)
-                onTextChanged: { panel.pickerCursor = 0; choiceList.positionViewAtBeginning(); }
-                // Consume Enter before TextField's accepted signal can bubble
-                // the same key into the newly focused slot-list navigation.
-                Keys.onReturnPressed: event => { event.accepted = true; Qt.callLater(function() { panel.choose(panel.pickerCursor); }); }
-                Keys.onEnterPressed: event => { event.accepted = true; Qt.callLater(function() { panel.choose(panel.pickerCursor); }); }
-                Keys.onDownPressed: panel.movePicker(1)
-                Keys.onUpPressed: panel.movePicker(-1)
-                Keys.onEscapePressed: panel.backToSlots()
-            }
-            ListView {
-                id: choiceList
-                width: parent.width; height: Commons.Style.space(252)
-                clip: true; spacing: Commons.Style.space(4); boundsBehavior: Flickable.StopAtBounds
-                model: panel.filteredChoices
-                delegate: ChoiceRow {
-                    required property int index
-                    required property var modelData
-                    width: choiceList.width; title: modelData.title; detail: modelData.detail
-                    iconName: modelData.action.icon; iconSource: modelData.iconSource || ""
-                    chosen: index === panel.pickerCursor
-                    onClicked: panel.choose(index)
-                }
-                Label { anchors.centerIn: parent; visible: choiceList.count === 0; text: "No matching apps or shortcuts"; font.pixelSize: Commons.Style.space(11) }
-            }
-            Button {
-                width: parent.width; text: "‹ Back to slots"; bordered: true
-                foreground: Commons.Color.menu.text; fontFamily: Commons.Style.font.menuFamily
-                onClicked: panel.backToSlots()
-            }
-        }
-        Label {
-            visible: panel.error !== ""; width: parent.width; text: panel.error
-            elide: Text.ElideNone; wrapMode: Text.WordWrap; color: Commons.Color.urgent
-            font.pixelSize: Commons.Style.space(11)
-        }
+    }
+    Column {
+        id: footer
+        x: header.x; y: panel.height - height - Commons.Style.space(18); width: header.width; spacing: Commons.Style.space(8)
+        EditorLabel { visible: panel.error !== ""; width: parent.width; text: panel.error; wrapMode: Text.WordWrap; color: Commons.Color.urgent }
+        EditorButton { visible: panel.setupFailed; text: "Retry shortcut setup"; enabled: !panel.busy; onClicked: panel.retrySetup() }
         Row {
-            visible: panel.editingSlot < 0
-            width: parent.width; spacing: Commons.Style.space(8)
-            Button {
-                width: (parent.width - parent.spacing) / 2
-                text: "Cancel"; bordered: true; hasCursor: panel.cursor === panel.controlCount - 2
-                foreground: Commons.Color.menu.text; fontFamily: Commons.Style.font.menuFamily; enabled: !panel.busy
-                onClicked: panel.canceled()
-            }
-            Button {
-                width: (parent.width - parent.spacing) / 2
-                text: panel.busy ? "Saving…" : "Save"; bordered: true; selected: true; hasCursor: panel.cursor === panel.controlCount - 1
-                enabled: !panel.busy; foreground: Commons.Color.menu.text; fontFamily: Commons.Style.font.menuFamily
-                onClicked: panel.saveRequested()
-            }
+            visible: panel.editingSlot < 0; width: parent.width; spacing: Commons.Style.space(8)
+            EditorButton { objectName: "orb-cancel"; width: (parent.width - parent.spacing) / 2; text: "Cancel"; enabled: !panel.busy; onClicked: panel.canceled() }
+            EditorButton { objectName: "orb-save"; width: (parent.width - parent.spacing) / 2; text: panel.busy ? "Saving…" : "Save"; selected: true; enabled: !panel.busy && !panel.shortcutCheck.error; onClicked: panel.requestSave() }
+        }
+    }
+    Connections {
+        target: panel.Window.window
+        function onActiveFocusItemChanged() {
+            var item = panel.Window.window.activeFocusItem, ancestor = item;
+            while (ancestor && ancestor !== body.contentItem) ancestor = ancestor.parent;
+            if (!item || !ancestor || item === slotNavigation) return;
+            panel.reveal(item);
         }
     }
 }

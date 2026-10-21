@@ -1,5 +1,45 @@
 // Pure geometry and validation, shared by the hosted QML and Node tests.
 var icons = ["browser", "terminal", "files", "screenshot", "themes", "plugins", "agents", "settings", "codex", "claude", "grok", "postcard", "app", "create"];
+function shortcut(value) {
+    if (value === undefined) value = "SUPER + ALT + O";
+    if (typeof value !== "string") return { error: "Choose a Super shortcut with one key." };
+    var parts = value.toUpperCase().split("+"), mask = 0, key = "";
+    var bits = { SUPER: 64, CTRL: 4, ALT: 8, SHIFT: 1 };
+    for (var i = 0; i < parts.length; i++) {
+        var token = parts[i].replace(/\s/g, "");
+        if (key) return { error: "Put the key after the shortcut modifiers." };
+        if (bits[token]) {
+            if (mask & bits[token]) return { error: "Use each shortcut modifier once." };
+            mask |= bits[token];
+        } else if (/^([A-Z0-9]|F[1-9]|F1[0-2]|SPACE)$/.test(token)) key = token;
+        else return { error: "Use a letter, number, F1–F12 or Space as the key." };
+    }
+    if (!(mask & 64) || !key) return { error: "Choose a Super shortcut with one key." };
+    var canonical = ["SUPER", "CTRL", "ALT", "SHIFT"].filter(function(p) { return mask & bits[p]; });
+    canonical.push(key);
+    return { value: canonical.join(" + "), key: key, mask: mask, error: "" };
+}
+function bindingConflict(binds, value, desktopRightClick) {
+    var checked = shortcut(value);
+    if (checked.error) return checked.error;
+    if (!Array.isArray(binds)) return "Could not check existing shortcuts. Try saving again.";
+    for (var i = 0; i < binds.length; i++) {
+        var b = binds[i], description = String(b.description || "");
+        if (String(b.key).toUpperCase() === checked.key && b.modmask === checked.mask
+            && description.indexOf("Orb shortcut wheel [orb:") !== 0)
+            return checked.value + " is already in use. Choose another shortcut.";
+        if (desktopRightClick && b.key === "mouse:273" && b.modmask === 0
+            && description.indexOf("Orb on empty desktop [orb:") !== 0)
+            return "Desktop right-click is already in use. Turn it off or change the existing binding.";
+    }
+    return "";
+}
+function move(items, from, to) {
+    var copy = items.slice();
+    if (from < 0 || to < 0 || from >= copy.length || to >= copy.length) return copy;
+    copy.splice(to, 0, copy.splice(from, 1)[0]);
+    return copy;
+}
 function action(a, depth) {
     if (!a || typeof a.label !== "string" || !a.label.trim() || a.label.length > 20 || icons.indexOf(a.icon) < 0) return null;
     var out = { label: a.label.trim(), icon: a.icon };
@@ -18,11 +58,51 @@ function action(a, depth) {
 }
 // Merge only edited fields/slots into the latest document. Preserve custom fields
 // and concurrent edits elsewhere; refuse to overwrite a conflicting slot.
+function mergeAction(document, original, draft, childOrigins) {
+    // Keep user metadata when an action moves or its editable fields change.
+    var result = JSON.parse(JSON.stringify(document || {}));
+    ["label", "icon", "command", "desktopId", "menu", "children"].forEach(function(k) { delete result[k]; });
+    Object.keys(draft).forEach(function(k) { result[k] = draft[k]; });
+    if (draft.children && original && original.children && document.children) {
+        var used = [];
+        result.children = draft.children.map(function(child, i) {
+            var origin = childOrigins ? childOrigins[i] : -1;
+            if (!childOrigins) for (var j = 0; j < original.children.length; j++) {
+                if (!used[j] && JSON.stringify(child) === JSON.stringify(original.children[j])) { origin = j; break; }
+            }
+            if (origin < 0 || origin >= original.children.length) return child;
+            used[origin] = true;
+            return mergeAction(document.children[origin], original.children[origin], child);
+        });
+    }
+    return result;
+}
 function mergeSettings(document, original, draft) {
     var result = JSON.parse(JSON.stringify(document));
     var current = parse(JSON.stringify(document), null);
     if (current.error) return { error: current.error };
-    if (draft.actions.length !== original.actions.length) {
+    if (draft.actionOrigins) {
+        var order = draft.actionOrigins;
+        if (order.length !== draft.actions.length || order.some(function(n, i) {
+            return !Number.isInteger(n) || n < -1 || n >= original.actions.length || (n >= 0 && order.indexOf(n) !== i);
+        })) return { error: "Invalid shortcut arrangement. Reopen settings." };
+        var structural = order.length !== original.actions.length || order.some(function(n, i) { return n !== i; });
+        if (structural && JSON.stringify(current.config.actions) !== JSON.stringify(original.actions))
+            return { error: "Slots changed elsewhere. Reopen settings before rearranging them." };
+        for (var slot = 0; slot < draft.actions.length; slot++) {
+            var origin = order[slot], edited = origin < 0 || JSON.stringify(original.actions[origin]) !== JSON.stringify(draft.actions[slot]);
+            if (!structural && edited && (current.config.actions.length !== original.actions.length
+                || (JSON.stringify(current.config.actions[origin]) !== JSON.stringify(original.actions[origin])
+                && JSON.stringify(current.config.actions[origin]) !== JSON.stringify(draft.actions[slot]))))
+                return { error: "Slot " + (slot + 1) + " changed elsewhere. Reopen settings to load it." };
+        }
+        if (structural) result.actions = [];
+        draft.actions.forEach(function(a, i) {
+            var origin = order[i];
+            if (!structural && JSON.stringify(a) === JSON.stringify(original.actions[i])) return;
+            result.actions[i] = origin < 0 ? a : mergeAction(document.actions[origin], original.actions[origin], a, (draft.childOrigins || [])[i]);
+        });
+    } else if (draft.actions.length !== original.actions.length) {
         if (JSON.stringify(current.config.actions) !== JSON.stringify(original.actions))
             return { error: "Slots changed elsewhere. Reopen settings before adding or removing slots." };
         var used = [];
@@ -42,7 +122,14 @@ function mergeSettings(document, original, draft) {
             return { error: "Slot " + (i + 1) + " changed elsewhere. Reopen settings to load it." };
         result.actions[i] = draft.actions[i];
     }
-    ["diameter", "animation"].forEach(function(key) { if (original[key] !== draft[key]) result[key] = draft[key]; });
+    var fields = ["diameter", "animation", "shortcut", "desktopRightClick"];
+    for (var field = 0; field < fields.length; field++) {
+        var name = fields[field];
+        if (draft[name] === undefined || original[name] === draft[name]) continue;
+        if (current.config[name] !== original[name] && current.config[name] !== draft[name])
+            return { error: "The " + name + " setting changed elsewhere. Reopen settings to load it." };
+        result[name] = draft[name];
+    }
     var checked = parse(JSON.stringify(result), null);
     return checked.error ? { error: checked.error } : { document: result, error: "" };
 }
@@ -58,7 +145,12 @@ function parse(raw, fallback) {
             return { config: fallback, error: "Invalid action " + (i + 1) + "; using the last valid configuration." };
         actions.push(a);
     }
-    return { config: { actions: actions, diameter: Math.max(220, Math.min(600, Number(value.diameter) || 240)), animation: value.animation !== false }, error: "" };
+    var activation = shortcut(value.shortcut);
+    if (activation.error) return { config: fallback, error: activation.error };
+    if (value.desktopRightClick !== undefined && typeof value.desktopRightClick !== "boolean")
+        return { config: fallback, error: "Desktop right-click must be on or off." };
+    return { config: { actions: actions, diameter: Math.max(220, Math.min(600, Number(value.diameter) || 240)), animation: value.animation !== false,
+        shortcut: activation.value, desktopRightClick: value.desktopRightClick === true }, error: "" };
 }
 function hit(x, y, diameter, count) {
     if (count === undefined) count = 6;
@@ -83,4 +175,5 @@ function placement(px, py, width, height, reserved, preferred) {
         x: Math.max(left, Math.min(px - size / 2, left + availableW - size)),
         y: Math.max(top, Math.min(py - size / 2, top + availableH - size - footer)) };
 }
-if (typeof module !== "undefined") module.exports = { parse: parse, hit: hit, placement: placement, mergeSettings: mergeSettings };
+if (typeof module !== "undefined") module.exports = { parse: parse, action: action, icons: icons, shortcut: shortcut, bindingConflict: bindingConflict,
+    move: move, hit: hit, placement: placement, mergeSettings: mergeSettings };

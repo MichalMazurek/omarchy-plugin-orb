@@ -4,4 +4,5 @@ cd "$(dirname "$0")/.."
 node scripts/check.mjs
 node --test tests/*.test.mjs
 node tests/model.cjs
+node tests/editor.cjs
 bash -n install uninstall scripts/setup scripts/launch scripts/agents scripts/agent tests/native tests/build-pointer

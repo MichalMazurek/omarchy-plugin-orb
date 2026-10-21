@@ -1,0 +1,106 @@
+// Run only inside an owned omadev nest. All input/configuration stays in that nest.
+const {execFileSync:exec,spawnSync}=require('node:child_process');
+const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict');
+assert.ok(process.env.OMADEV_SLOT && process.env.OMADEV_OWNER,'Run through omadev, never on the host desktop');
+const repo=path.resolve(__dirname,'..'),id='io.github.tcballard.orb';
+const run=(command,...args)=>exec(command,args.map(String),{encoding:'utf8',timeout:15000}).trim();
+const json=(...args)=>JSON.parse(run(...args)),ipc=(...args)=>run('omarchy-shell',...args),status=()=>JSON.parse(ipc(id,'status'));
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+async function until(check,message){for(let i=0;i<70;i++){if(check())return;await sleep(80);}throw Error(message||'Timed out');}
+const key=value=>run('wtype','-s','50','-k',value,'-s','50');
+const chord=(modifier,value)=>run('wtype','-M',modifier,'-k',value,'-m',modifier,'-s','70');
+const text=value=>run('wtype','--',value);
+const monitor=json('hyprctl','monitors','-j').find(m=>m.focused),pointer=path.join(repo,'artifacts/input/pointer');
+const move=(x,y,button=0,end)=>run(pointer,Math.round(x),Math.round(y),monitor.width,monitor.height,button,...(end?end.map(Math.round):[]));
+const config=path.join(process.env.XDG_CONFIG_HOME,'omarchy/orb.json');
+assert.ok(config.startsWith(process.env.OMADEV_HOME+'/'),'Configuration must belong to the nest');
+const oldText=fs.readFileSync(config,'utf8');
+let s;
+const fixture=JSON.parse(fs.readFileSync(path.join(repo,'config.example.json'),'utf8'));
+fixture.desktopRightClick=false;fixture.custom='preserve';fixture.actions[0].note='Browser metadata';fixture.actions[4].children[0].note='Themes metadata';
+const fixtureText=JSON.stringify(fixture,null,2)+'\n',report=[];
+const pass=message=>{report.push(message);console.log('PASS:',message);};
+function capture(name){
+    let s=status();if(s.settingsOpen)move(s.settingsX+30,s.settingsY+25);
+    run('sleep','0.2');s=status();
+    const region=s.settingsOpen?['-g',`${Math.floor(s.settingsX)},${Math.floor(s.settingsY)} ${Math.ceil(s.settingsWidth)}x${Math.ceil(s.settingsHeight)}`]:[];
+    run('grim',...region,path.join(repo,'artifacts',name+'.png'));
+}
+function control(name){const s=status(),c=s.settingsControls.find(c=>c.name===name);assert.ok(c,'Missing UI control '+name);return {...c,x:c.x+s.settingsX,y:c.y+s.settingsY};}
+async function click(name){
+    let c=control(name);assert.ok(c.enabled,'Disabled UI control '+name);
+    if(!/^orb-(tab-|save$|cancel$)/.test(name)) for(let i=0;i<24;i++){
+        const s=status(),l=s.settingsLayout,top=s.settingsY+l.bodyY,bottom=top+l.bodyHeight,center=c.y+c.height/2;
+        if(center>=top&&center<=bottom)break;
+        assert.ok(i<23,'Could not scroll UI control into view: '+name);
+        move(s.settingsX+l.bodyX+l.bodyWidth/2,top+l.bodyHeight/2,center<top?-2:-1);await sleep(130);c=control(name);
+    }
+    move(c.x+c.width/2,c.y+c.height/2,272);await sleep(100);
+}
+async function fill(name,value){await click(name);chord('ctrl','a');text(value);await sleep(70);}
+async function openSettings(){ipc('shell','summon',id,'{}');await until(()=>status().opened&&status().ready&&status().opacity===1);await sleep(130);key('Home');key('Return');await until(()=>status().settingsOpen);await sleep(100);}
+async function save(){await click('orb-save');await until(()=>!status().settingsOpen&&!status().settingsSaving,'Save failed: '+status().settingsError);}
+async function reset(){ipc('shell','hide',id);fs.writeFileSync(config,fixtureText);await until(()=>status().visibleItems[0]==='Browser'&&status().visibleItems.length===6);await sleep(180);}
+function saved(){return JSON.parse(fs.readFileSync(config,'utf8'));}
+function previewPoint(s,index){const angle=(index*360/s.draftActions.length-90)*Math.PI/180,p=s.preview;return [s.settingsX+p.x+p.diameter/2+Math.cos(angle)*p.diameter*.33,s.settingsY+p.y+p.diameter/2+Math.sin(angle)*p.diameter*.33];}
+async function choose(query){text(query);await until(()=>status().pickerItems.length>0);key('Return');await sleep(100);}
+const output=path.join(repo,'artifacts/command-arguments.json'),probe=path.join(repo,'artifacts/orb-command-probe');
+fs.rmSync(output,{force:true});
+fs.writeFileSync(probe,'#!/usr/bin/python3\nimport json,sys,os\noutput='+JSON.stringify(output)+'\nwith open(output+".tmp", "w") as f: json.dump(sys.argv[1:], f)\nos.replace(output+".tmp", output)\n',{mode:0o755});
+(async()=>{try{
+await until(()=>spawnSync('omarchy-shell',[id,'status'],{encoding:'utf8'}).status===0,'Orb did not finish loading');
+await reset();await until(()=>status().setupReady,'Native shortcut setup failed: '+status().setupError);
+move(monitor.width/2,monitor.height/2);
+if(!process.argv.includes('--submenu-only')){
+await openSettings();capture('editor-shortcuts');
+s=status();let from=previewPoint(s,0),to=previewPoint(s,2);move(...from,272,to);
+await until(()=>status().draftActions[2].label==='Browser','Drag did not reorder');
+await click('orb-cancel');assert.equal(fs.readFileSync(config,'utf8'),fixtureText);
+pass('Real pointer drag changes the draft; Cancel leaves the saved arrangement unchanged');
+await openSettings();chord('alt','Right');assert.equal(status().draftActions[1].label,'Browser');await save();
+assert.equal(saved().actions[1].note,'Browser metadata');assert.equal(saved().custom,'preserve');
+await openSettings();assert.equal(status().draftActions[1].label,'Browser');await save();
+await openSettings();s=status();from=previewPoint(s,1);to=previewPoint(s,3);move(...from,272,to);await until(()=>status().draftActions[3].label==='Browser');await save();
+assert.equal(saved().actions[3].note,'Browser metadata');
+pass('Keyboard and pointer reordering save/reopen correctly, retain metadata, and unchanged Save finishes');
+await reset();await openSettings();await click('orb-tab-2');await fill('orb-opening-key','F13');assert.equal(control('orb-save').enabled,false);
+await fill('orb-opening-key','F12');await click('orb-modifier-Ctrl');await click('orb-desktop-click');capture('editor-opening');await save();
+await until(()=>status().setupReady&&!status().setupError,'Opening controls did not register');
+let binds=json('hyprctl','binds','-j');assert.equal(binds.filter(b=>b.key==='F12'&&b.modmask===76&&b.description.startsWith('Orb shortcut wheel [orb:')).length,1);
+assert.equal(binds.filter(b=>b.key==='mouse:273'&&b.modmask===0&&b.description.startsWith('Orb on empty desktop [orb:')).length,1);
+run('hyprctl','reload');await until(()=>json('hyprctl','binds','-j').some(b=>b.key==='F12'&&b.modmask===76&&b.description.startsWith('Orb shortcut wheel [orb:')),'Bindings did not recover after compositor reload');
+await openSettings();await click('orb-tab-2');assert.equal(status().draftShortcut,'SUPER + CTRL + ALT + F12');assert.equal(status().draftDesktopRightClick,true);
+await click('orb-modifier-Ctrl');await click('orb-modifier-Alt');await fill('orb-opening-key','O');const beforeConflict=fs.readFileSync(config,'utf8');await click('orb-save');
+await until(()=>!status().settingsSaving&&status().settingsError.includes('already in use'));assert.equal(fs.readFileSync(config,'utf8'),beforeConflict);capture('editor-shortcut-conflict');await click('orb-cancel');
+pass('Opening controls persist, bindings update and recover after reload, invalid keys are blocked, conflicts preserve the file and working bindings');
+await reset();await openSettings();await click('orb-slot-0');await click('orb-action-mode-1');
+await fill('orb-action-name','Argument check');await fill('orb-action-program',probe);await fill('orb-action-argument-0','hello world');await fill('orb-action-argument-1','$(literal)');
+capture('editor-custom-command');await click('orb-action-use');await save();
+assert.deepEqual(saved().actions[0].command,[probe,'hello world','$(literal)']);key('1');key('Return');await until(()=>fs.existsSync(output));assert.deepEqual(JSON.parse(fs.readFileSync(output,'utf8')),['hello world','$(literal)']);
+pass('Custom command editor saves and launches a program with exact arguments, including spaces and shell punctuation');
+}
+await reset();await openSettings();await click('orb-slot-4');assert.equal(status().editorMode,2);await fill('orb-action-name','My tools');
+await click('orb-action-edit-child-0');await until(()=>status().editingChild===0);await choose('Terminal');await until(()=>status().editingChild===-1);
+assert.equal(status().editorChildren[0].label,'Terminal');await click('orb-action-add-child');await click('orb-child-mode-1');
+await fill('orb-child-name','Submenu probe');await fill('orb-child-program',probe);await click('orb-child-add-argument');await fill('orb-child-argument-0','submenu argument');await click('orb-child-use');
+await until(()=>status().editingChild===-1);await click('orb-action-up-child-2');await click('orb-action-remove-child-2');
+assert.deepEqual(status().editorChildren.map(a=>a.label),['Terminal','Submenu probe']);capture('editor-submenu');await click('orb-action-use');await save();
+assert.equal(saved().actions[4].children[0].note,'Themes metadata');assert.equal(saved().actions[4].label,'My tools');
+key('5');key('Return');await until(()=>status().submenu==='My tools');assert.deepEqual(status().visibleItems,['Terminal','Submenu probe']);key('2');key('Return');await until(()=>JSON.parse(fs.readFileSync(output,'utf8'))[0]==='submenu argument');
+await openSettings();await click('orb-slot-4');await click('orb-action-edit-child-1');await click('orb-child-mode-1');await fill('orb-child-name','Discard this');key('Escape');assert.equal(status().editorChildren[1].label,'Submenu probe');key('Escape');key('Escape');assert.equal(saved().actions[4].children[1].label,'Submenu probe');
+pass('Submenu actions can be edited, added, reordered, removed, saved and launched; nested Cancel discards its draft');
+await reset();await openSettings();await click('orb-add-slot');await choose('Themes');assert.equal(status().draftActions.length,7);await click('orb-add-slot');await choose('Postcard');assert.equal(status().draftActions.length,8);await save();
+await openSettings();assert.equal(status().draftActions.length,8);key('Delete');key('Delete');key('Delete');assert.equal(status().draftActions.length,6);await save();
+pass('The new editor retains add/save/reopen/remove from six to eight shortcuts and prevents fewer than six');
+for(const p of [[1,1],[monitor.width-1,1],[1,monitor.height-1],[monitor.width-1,monitor.height-1]]){
+    ipc('shell','hide',id);move(...p);await openSettings();s=status();assert.ok(s.settingsX>=12&&s.settingsY>=12);assert.ok(s.settingsX+s.settingsWidth<=monitor.width-12&&s.settingsY+s.settingsHeight<=monitor.height-12);key('Escape');
+}
+pass('Settings remain inside the nested monitor at all four pointer corners');
+}catch(error){
+try{capture('editor-failure');fs.writeFileSync(path.join(repo,'artifacts/editor-failure.json'),JSON.stringify(status(),null,2));}catch{}
+throw error;
+}finally{
+try{ipc('shell','hide',id);}catch{}
+fs.writeFileSync(config,oldText);
+fs.writeFileSync(path.join(repo,'artifacts/editor-live-results.json'),JSON.stringify({date:new Date().toISOString(),source:run('git','-C',repo,'rev-parse','HEAD'),omarchy:run('git','-C',process.env.OMARCHY_PATH,'rev-parse','HEAD'),display:{width:monitor.width,height:monitor.height,scale:monitor.scale},report},null,2)+'\n');
+}})().catch(error=>{console.error(error);process.exitCode=1;});

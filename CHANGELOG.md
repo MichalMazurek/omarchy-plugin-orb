@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Arrange shortcuts by dragging around a wheel preview, with keyboard and button alternatives.
+- Change the opening shortcut and desktop right-click in Settings, with validation and conflict checks before saving.
+- Create and edit custom commands, including separate arguments and an icon picker.
+- Add, edit, reorder and remove submenu actions without editing JSON.
+- Retain custom action metadata through reordering and edits; preserve unrelated concurrent changes.
+- Finish unchanged saves normally and keep shortcut bindings working across repeated setup and activation changes.
+
 ## 0.1.1 — 2026-10-19
 
 - Install, update and remove through the normal Omarchy plugin commands against `main`.

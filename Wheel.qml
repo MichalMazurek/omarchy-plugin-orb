@@ -213,9 +213,27 @@ Item {
     function saveSettings() {
         if (settingsSaving) return;
         settingsError = "";
-        settingsSaving = true; settingsReloadPending = true;
+        var checked = Model.parse(JSON.stringify(settingsCard.draft()), null);
+        if (checked.error) { settingsError = checked.error; return; }
+        settingsSaving = true; saveWatchdog.restart();
+        if (checked.config.shortcut !== settingsCard.original.shortcut || checked.config.desktopRightClick !== settingsCard.original.desktopRightClick)
+            bindingCheck.running = true;
+        else reloadForSave();
+    }
+    function reloadForSave() {
+        settingsReloadPending = true;
         // Re-read before merging so unrelated and concurrent edits survive.
         userConfig.reload();
+    }
+    function failSettingsSave(message) {
+        settingsSaving = false; settingsReloadPending = false; saveWatchdog.stop(); settingsError = message;
+    }
+    function finishSettingsSave() {
+        if (!settingsSaving) return;
+        settingsSaving = false; saveWatchdog.stop();
+        config = Model.parse(settingsSaveText, config).config;
+        shortcut = config.shortcut; updateBindings(config);
+        if (opened && settingsOpen) cancelSettings();
     }
     function launchAction(command, label) {
         lastAction = label;
@@ -233,8 +251,17 @@ Item {
             setupReady: setupReady, setupError: setupError,
             settingsX: settingsCard.x, settingsY: settingsCard.y, settingsWidth: settingsCard.width, settingsHeight: settingsCard.height,
             draftDiameter: settingsCard.diameter, draftAnimation: settingsCard.animation,
+            draftShortcut: settingsCard.shortcut, draftDesktopRightClick: settingsCard.desktopRightClick,
+            preview: settingsCard.previewStatus(), selectedSlot: settingsCard.selectedSlot,
+            settingsLayout: settingsCard.layoutStatus(),
+            settingsControls: root.settingsOpen ? settingsCard.controls() : [],
+            editorMode: settingsCard.editor.mode, editingChild: settingsCard.editor.editingChild,
+            editorError: settingsCard.editor.error,
+            editorLabel: settingsCard.editor.actionLabel, editorProgram: settingsCard.editor.program,
+            editorIcon: settingsCard.editor.actionIcon, editorDepth: settingsCard.editor.depth,
+            editorArguments: settingsCard.editor.commandArguments, editorChildren: settingsCard.editor.submenuActions,
             draftActions: settingsCard.actions, settingsTab: settingsCard.tab, editingSlot: settingsCard.editingSlot,
-            pickerItems: settingsCard.editingSlot >= 0 ? settingsCard.filteredChoices.map(function(c) { return c.title; }) : [],
+            pickerItems: settingsCard.editingSlot >= 0 ? settingsCard.editor.pickerTitles() : [],
             screen: panel.targetScreen ? panel.targetScreen.name : "", error: configError,
             foreground: String(Commons.Color.menu.text), background: String(Commons.Color.menu.background),
             lastAction: lastAction, lastDispatch: lastDispatch, pendingDesktopId: pendingDesktopId, launchPending: launchDelay.running,
@@ -263,46 +290,54 @@ Item {
             root.config = parsed.config; root.configError = parsed.error;
             if (!parsed.error) {
                 var current = JSON.parse(text());
-                root.shortcut = current.shortcut || "SUPER + ALT + O";
+                root.shortcut = parsed.config.shortcut;
                 root.updateBindings(current);
             }
             if (root.settingsReloadPending) {
                 root.settingsReloadPending = false;
                 if (parsed.error) {
-                    root.settingsSaving = false;
-                    root.settingsError = "Could not read your settings. Nothing was saved.";
+                    root.failSettingsSave("Could not read your settings. Nothing was saved.");
                     return;
                 }
                 var document = JSON.parse(text());
                 var merged = Model.mergeSettings(document, settingsCard.original, settingsCard.draft());
                 if (merged.error) {
-                    root.settingsSaving = false; root.settingsError = merged.error; return;
+                    root.failSettingsSave(merged.error); return;
                 }
                 root.settingsSaveText = JSON.stringify(merged.document, null, 2) + "\n";
-                settingsWriter.setText(root.settingsSaveText);
+                // FileView skips identical text without emitting saved().
+                if (root.settingsSaveText === text()) root.finishSettingsSave();
+                else Qt.callLater(function() { userConfig.setText(root.settingsSaveText); });
             }
         }
         onLoadFailed: {
             if (root.settingsReloadPending) {
-                root.settingsReloadPending = false; root.settingsSaving = false;
-                root.settingsError = "Could not read your settings. Nothing was saved.";
+                root.failSettingsSave("Could not read your settings. Nothing was saved.");
             }
         }
-    }
-    FileView {
-        id: settingsWriter
-        path: root.configPath
-        preload: false
-        blockLoading: true
         atomicWrites: true
-        onSaved: {
-            root.settingsSaving = false;
-            root.config = Model.parse(root.settingsSaveText, root.config).config;
-            if (root.opened && root.settingsOpen) root.cancelSettings();
-        }
+        onSaved: root.finishSettingsSave()
         onSaveFailed: {
-            root.settingsSaving = false;
-            root.settingsError = "Could not save. Your changes are still here.";
+            if (root.settingsSaving) root.failSettingsSave("Could not save. Your changes are still here.");
+        }
+    }
+    Timer {
+        id: saveWatchdog
+        interval: 5000
+        onTriggered: if (root.settingsSaving) root.failSettingsSave("Could not save. Your changes are still here.")
+    }
+    Process {
+        id: bindingCheck
+        command: ["hyprctl", "binds", "-j"]
+        stdout: StdioCollector { id: existingBindings }
+        onExited: (code, status) => {
+            if (!root.settingsSaving) return;
+            var error = "Could not check existing shortcuts. Try saving again.";
+            if (code === 0) try {
+                error = Model.bindingConflict(JSON.parse(existingBindings.text), settingsCard.draft().shortcut, settingsCard.desktopRightClick);
+            } catch (failure) {}
+            if (error) root.failSettingsSave(error);
+            else root.reloadForSave();
         }
     }
     Process {
@@ -586,10 +621,10 @@ Item {
             id: settingsCard
             visible: root.opened && root.positioned && root.settingsOpen
             readonly property var reserved: panel.monitorData.reserved || [0, 0, 0, 0]
-            width: Math.min(Commons.Style.space(300), panel.width - reserved[0] - reserved[2] - 24)
+            width: Math.min(Commons.Style.space(680), panel.width - reserved[0] - reserved[2] - 24)
+            maximumHeight: panel.height - reserved[1] - reserved[3] - 24
             x: Math.max(reserved[0] + 12, Math.min(wheel.x + wheel.width / 2 - width / 2, panel.width - reserved[2] - width - 12))
             y: Math.max(reserved[1] + 12, Math.min(wheel.y + wheel.height / 2 - height / 2, panel.height - reserved[3] - height - 12))
-            shortcut: root.shortcut
             appLibrary: root.appLibrary
             busy: root.settingsSaving
             error: root.settingsError || root.setupError

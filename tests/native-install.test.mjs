@@ -21,7 +21,7 @@ case "$1" in
   binds)
     if [[ -f "$ORB_FIXTURE/applied" ]]; then
       [[ $ORB_MODE != missing ]] || { echo '[]'; exit; }
-      printf '[{"key":"O","modmask":72,"description":"Orb shortcut wheel [orb:${token}]"},{"key":"mouse:273","modmask":0,"description":"Orb on empty desktop [orb:${token}]"}]\n'
+      cat "$ORB_FIXTURE/registered.json"
     else
       cat "$ORB_FIXTURE/binds.json"
     fi ;;
@@ -44,8 +44,17 @@ case "$1" in
 esac
 `,{mode:0o755});
     fs.writeFileSync(path.join(dir,'binds.json'),'[]');
-    const run=(mode='')=>spawnSync('bash',[path.join(root,'scripts/setup'),token],{encoding:'utf8',timeout:10000,
-      env:{...process.env,PATH:bin+path.delimiter+process.env.PATH,HOME:dir,XDG_CONFIG_HOME:config,ORB_FIXTURE:dir,ORB_MODE:mode}});
+    const run=(mode='')=>{
+      const file=path.join(config,'omarchy/orb.json');
+      const value=JSON.parse(fs.existsSync(file)?fs.readFileSync(file,'utf8'):example);
+      const parts=(value.shortcut||'SUPER + ALT + O').split('+').map(s=>s.trim().toUpperCase());
+      const bits={SUPER:64,ALT:8,CTRL:4,SHIFT:1};
+      const binds=[{key:parts.at(-1),modmask:parts.slice(0,-1).reduce((m,p)=>m|(bits[p]||0),0),description:`Orb shortcut wheel [orb:${token}]`}];
+      if(value.desktopRightClick)binds.push({key:'mouse:273',modmask:0,description:`Orb on empty desktop [orb:${token}]`});
+      fs.writeFileSync(path.join(dir,'registered.json'),JSON.stringify(binds));
+      return spawnSync('bash',[path.join(root,'scripts/setup'),token],{encoding:'utf8',timeout:10000,
+        env:{...process.env,PATH:bin+path.delimiter+process.env.PATH,HOME:dir,XDG_CONFIG_HOME:config,ORB_FIXTURE:dir,ORB_MODE:mode}});
+    };
     const put=(file,content)=>{const p=path.join(config,file);fs.mkdirSync(path.dirname(p),{recursive:true});fs.writeFileSync(p,content);return p;};
     fn({dir,config,run,put});
   } finally {fs.rmSync(dir,{recursive:true,force:true});}
@@ -63,6 +72,13 @@ test('repeat enable preserves the released config and all custom metadata',()=>f
   const r=run();assert.equal(r.status,0,r.stderr);
   assert.equal(fs.readFileSync(path.join(config,'omarchy/orb.json'),'utf8'),raw);
   const code=fs.readFileSync(path.join(dir,'apply.lua'),'utf8');assert.match(code,/SUPER \+ CTRL \+ P/);assert.match(code,/auto_consuming = true/);
+}));
+test('modifier ordering is canonical before retaining an existing key',()=>fixture(({run,put,dir})=>{
+  put('omarchy/orb.json',JSON.stringify({...JSON.parse(example),shortcut:'alt + super + ctrl + p'}));
+  const r=run();assert.equal(r.status,0,r.stderr);
+  const code=fs.readFileSync(path.join(dir,'apply.lua'),'utf8');
+  assert.match(code,/SUPER \+ CTRL \+ ALT \+ P/);
+  assert.doesNotMatch(code,/ALT \+ SUPER/);
 }));
 for(const [name,binds] of [
   ['keyboard',[{key:'O',modmask:72,description:'User shortcut'}]],
@@ -107,12 +123,15 @@ test('Lua lifecycle removes only owned handles, survives reload and rejects late
   put('omarchy/orb.json',JSON.stringify({...JSON.parse(example),desktopRightClick:true}));
   assert.equal(run().status,0);
   const apply=fs.readFileSync(path.join(dir,'apply.lua'),'utf8');
+  put('omarchy/orb.json',JSON.stringify({...JSON.parse(example),desktopRightClick:false}));
+  assert.equal(run().status,0);
+  const keyboardOnly=fs.readFileSync(path.join(dir,'apply.lua'),'utf8');
   const context=vm.createContext({});vm.runInContext(fs.readFileSync(path.join(root,'BindingLifecycle.js'),'utf8'),context);
   const cleanup=context.cleanup(token), newer='1792450000001-123456789';
   const lua=`local registered = {}; local count = 0
 hl = { bind = function(key, cb, opts)
   local bind = { key = key, callback = cb, description = opts.description, removed = false }
-  function bind:remove() self.removed = true end
+  function bind:remove() for _, other in ipairs(registered) do if other.key == self.key then other.removed = true end end end
   table.insert(registered, bind); return bind
 end, exec_cmd = function() count = count + 1 end }
 local function evaluate(code) assert(load(code))() end
@@ -121,10 +140,14 @@ local apply = ${JSON.stringify(apply)}
 local cleanup = ${JSON.stringify(cleanup)}
 evaluate(apply); assert(live() == 2); registered[1].callback(); assert(count == 1)
 evaluate(apply); assert(live() == 2) -- repeated config file event
+evaluate(${JSON.stringify(apply.replaceAll('SUPER + ALT + O','SUPER + ALT + P'))}); assert(live() == 2) -- replace key, retain desktop handle
+evaluate(apply); assert(live() == 2) -- restore key, still retain desktop handle
+evaluate(${JSON.stringify(keyboardOnly)}); assert(live() == 1) -- retain keyboard handle while disabling desktop
 local originalBind = hl.bind
 hl.bind = function(key, cb, opts) if key == "mouse:273" then return nil end; return originalBind(key, cb, opts) end
-assert(not pcall(evaluate, apply)); assert(live() == 2) -- partial failure keeps the prior working set
+assert(not pcall(evaluate, apply)); assert(live() == 1) -- partial failure keeps the prior working keyboard
 hl.bind = originalBind
+evaluate(apply); assert(live() == 2)
 evaluate(${JSON.stringify(apply.replaceAll(token,newer))}); assert(live() == 2)
 evaluate(cleanup); assert(live() == 2) -- late old unload cannot delete new handles
 evaluate(apply); assert(live() == 2) -- late old apply is tombstoned
