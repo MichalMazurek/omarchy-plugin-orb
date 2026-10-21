@@ -2,7 +2,7 @@
 
 `io.github.tcballard.orb` declares only `menu`, mapping to the hosted `Item` in `Wheel.qml`. It exposes `open(payloadJson)`, `close()` and `opened`. `keepLoaded` avoids repeated construction and permits a 120ms launch handoff after unmapping. No standalone Quickshell, background service, Rust helper, Python, network or privileged operations.
 
-`qs.Ui.OverlayWindow` owns the focused-monitor surface and scale readiness. Exclusive keyboard focus exists only while open. Cancellation clears pointer sampling and pending launches, unmaps the layer and lets Hyprland restore focus. Completed actions hide before launching. Repeated summon resets one surface; toggle cancels it.
+A managed `PanelWindow` overlay owns the focused-monitor surface and scale readiness. Exclusive keyboard focus exists only while open. Cancellation clears pointer sampling and pending launches, unmaps the layer and lets Hyprland restore focus. Completed actions hide before launching. Repeated summon resets one surface; toggle cancels it.
 
 `hyprctl -j cursorpos` runs once per summon; failure falls back to monitor centre. `Model.js` clamps logical coordinates against reserved edges and tests radial hit regions. Selection starts neutral; sectors run clockwise from Browser at the top. `PointerMoveGate` prevents stationary pointer events replacing keyboard selection. Theme, typography, spacing and reduced-motion tokens are live bindings. Canvas redraws on palette/selection changes; `LineIcon.qml` draws original vector paths. `ActionIcon.qml` renders bundled Codex/Claude/Grok SVG marks, choosing contrasting variants from the menu background luminance; the generic icon is a fallback for unsupported agents or a failed asset load.
 

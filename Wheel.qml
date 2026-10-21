@@ -373,11 +373,41 @@ Item {
         target: root.pluginId
         function status(): string { return root.status(); }
     }
-    OverlayWindow {
+    PanelWindow {
         id: panel
-        shown: root.opened
-        shownKeyboardFocus: root.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        property bool shown: root.opened
+        property int shownKeyboardFocus: root.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        readonly property var targetMonitor: Hyprland.focusedMonitor
+
+        function focusedScreen() {
+            var monitor = targetMonitor;
+            var name = monitor ? String(monitor.name || "") : "";
+            for (var i = 0; i < Quickshell.screens.length; i++) {
+                if (Quickshell.screens[i].name === name)
+                    return Quickshell.screens[i];
+            }
+            return Quickshell.screens.length > 0 ? Quickshell.screens[0] : null;
+        }
+
+        property var targetScreen: shown ? focusedScreen() : null
+        onShownChanged: targetScreen = shown ? focusedScreen() : null
+
+        visible: shown && !!targetScreen
+        screen: targetScreen
+        anchors {
+            bottom: true
+            left: true
+            right: true
+            top: true
+        }
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.layer: WlrLayer.Overlay
+        WlrLayershell.keyboardFocus: shown ? shownKeyboardFocus : WlrKeyboardFocus.None
         WlrLayershell.namespace: "omarchy-plugin-orb"
+
+        readonly property bool contentReady: width > 0 && height > 0
+        readonly property bool contentRevealed: shown && contentReady
         readonly property var monitorData: targetMonitor ? targetMonitor.lastIpcObject : ({})
         readonly property var placement: Model.placement(
             root.pointer.x - (monitorData.x || 0), root.pointer.y - (monitorData.y || 0),
