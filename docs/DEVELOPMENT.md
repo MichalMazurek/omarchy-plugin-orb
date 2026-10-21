@@ -8,6 +8,8 @@ Portable checks (Node 22+, Bash, jq, Lua 5.4 or texlua; no npm dependencies):
 
 This retains the starter identity/CI checks and adds geometry/config tests. On Omarchy, `./tests/native` also runs the installed manifest validator and Qt's QML parser. Parsing is not runtime verification.
 
+`node --test tests/surface.test.mjs` exercises the JavaScript handlers and readiness expressions extracted from Orb's `PanelWindow`: focused-output selection, stable placement across focus changes, geometry/scale readiness, deferred reveal cancellation and output removal. These fixtures do not instantiate QML or exercise layer-shell mapping. For issue #10, verify on an Omarchy release shell without `qs.Ui.OverlayWindow`: fresh enable initializes settings and the shortcut, status reports `setupReady`, summon/keyboard/outside-click/hide work, and focus returns after closing. Repeat on additional outputs and fractional scale, including disconnecting the selected output while open.
+
 Install from main with `omarchy plugin add https://github.com/tcballard/omarchy-plugin-orb.git --enable`. For a committed development checkout, use the supported local Git URL with `omarchy plugin add "$PWD" --enable --yes`. Normal updates use `omarchy plugin update io.github.tcballard.orb`; remove with `omarchy plugin remove io.github.tcballard.orb`. The compatibility `./install` and `./uninstall` wrappers only forward to the native manager. No post-install terminal command is needed.
 
 The opt-in live harness controls the actual desktop. It saves/restores workspace, focused window and pointer, uses an empty named workspace, launches real actions and closes only newly created test windows:

@@ -377,10 +377,17 @@ Item {
         id: panel
         property bool shown: root.opened
         property int shownKeyboardFocus: root.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
-        readonly property var targetMonitor: Hyprland.focusedMonitor
+        property var targetScreen: null
+        readonly property var targetMonitor: {
+            var monitors = Hyprland.monitors.values;
+            for (var i = 0; i < monitors.length; i++) {
+                if (targetScreen && monitors[i].name === targetScreen.name) return monitors[i];
+            }
+            return null;
+        }
 
         function focusedScreen() {
-            var monitor = targetMonitor;
+            var monitor = Hyprland.focusedMonitor;
             var name = monitor ? String(monitor.name || "") : "";
             for (var i = 0; i < Quickshell.screens.length; i++) {
                 if (Quickshell.screens[i].name === name)
@@ -389,10 +396,25 @@ Item {
             return Quickshell.screens.length > 0 ? Quickshell.screens[0] : null;
         }
 
-        property var targetScreen: shown ? focusedScreen() : null
-        onShownChanged: targetScreen = shown ? focusedScreen() : null
+        onShownChanged: {
+            targetScreen = shown ? focusedScreen() : null;
+            if (shown) Hyprland.refreshMonitors();
+        }
+        onDevicePixelRatioChanged: if (shown) Hyprland.refreshMonitors()
 
-        visible: shown && !!targetScreen
+        Connections {
+            target: Quickshell
+            function onScreensChanged() {
+                if (panel.shown && Quickshell.screens.indexOf(panel.targetScreen) < 0) {
+                    panel.targetScreen = null;
+                    Qt.callLater(function() {
+                        if (panel.shown && !panel.targetScreen) panel.targetScreen = panel.focusedScreen();
+                    });
+                }
+            }
+        }
+
+        visible: shown && !!targetScreen && !!targetMonitor
         screen: targetScreen
         anchors {
             bottom: true
@@ -406,8 +428,21 @@ Item {
         WlrLayershell.keyboardFocus: shown ? shownKeyboardFocus : WlrKeyboardFocus.None
         WlrLayershell.namespace: "omarchy-plugin-orb"
 
-        readonly property bool contentReady: width > 0 && height > 0
-        readonly property bool contentRevealed: shown && contentReady
+        readonly property bool contentReady: shown && backingWindowVisible && !!targetScreen
+            && width === targetScreen.width && height === targetScreen.height
+            && !!targetMonitor && Math.round(devicePixelRatio * 120) === Math.round(targetMonitor.scale * 120)
+        property bool contentRevealed: false
+        onContentReadyChanged: {
+            contentRevealed = false;
+            if (contentReady) Qt.callLater(function() {
+                if (panel.contentReady) panel.contentRevealed = true;
+            });
+        }
+        Binding {
+            target: panel.contentItem
+            property: "opacity"
+            value: panel.contentRevealed ? 1 : 0
+        }
         readonly property var monitorData: targetMonitor ? targetMonitor.lastIpcObject : ({})
         readonly property var placement: Model.placement(
             root.pointer.x - (monitorData.x || 0), root.pointer.y - (monitorData.y || 0),

@@ -4,6 +4,7 @@
 
 Template authorship: Tom Ballard, 2026, MIT. Project author: Tom Ballard.
 - Plugin conventions: [Build Omarchy Plugins](https://github.com/tcballard/build-omarchy-plugins).
+- Release-shell `PanelWindow` compatibility fix: [sanjithdoescode](https://github.com/sanjithdoescode/omarchy-plugin-orb/pull/1), reported in [issue #10](https://github.com/tcballard/omarchy-plugin-orb/issues/10). Output selection, scale readiness and hotplug handling follow Omarchy's MIT-licensed [OverlayWindow source](https://api.github.com/repos/omacom/omarchy/git/blobs/e0b3c322b12e31ebaa283d16b410efd95d65d6c9); the upstream notice is retained in assets/agents/LICENSE.omarchy.
 - Community badge: [omarchy-badges](https://github.com/tcballard/omarchy-badges), pinned to 75975e5b5bf75e7ede3764bcd2950046f7abfe2c.
 - Test-only virtual pointer protocol: copyright 2019 Josef Gajdusek, MIT. Full licence remains in tests/virtual-pointer.xml. [Upstream protocol](https://gitlab.freedesktop.org/wlroots/wlr-protocols/-/blob/master/unstable/wlr-virtual-pointer-unstable-v1.xml).
 
