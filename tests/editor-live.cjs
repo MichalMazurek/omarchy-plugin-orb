@@ -160,8 +160,8 @@ key('5');key('Return');await until(()=>status().submenu==='My tools');assert.dee
 await openSettings();await click('orb-slot-4');await click('orb-action-edit-child-1');await click('orb-child-mode-1');await fill('orb-child-name','Discard this');key('Escape');assert.equal(status().editorChildren[1].label,'Submenu probe');key('Escape');key('Escape');assert.equal(saved().actions[4].children[1].label,'Submenu probe');
 pass('Submenu actions can be edited, added, reordered, removed, saved and launched; nested Cancel discards its draft');
 await reset();await openSettings();await click('orb-add-slot');await choose('Themes');assert.equal(status().draftActions.length,7);await click('orb-add-slot');await choose('Postcard');assert.equal(status().draftActions.length,8);await save();
-await openSettings();assert.equal(status().draftActions.length,8);key('Delete');key('Delete');key('Delete');assert.equal(status().draftActions.length,6);await save();
-pass('The new editor retains add/save/reopen/remove from six to eight shortcuts and prevents fewer than six');
+await openSettings();assert.equal(status().draftActions.length,8);key('Delete');key('Delete');key('Delete');key('Delete');assert.equal(status().draftActions.length,5);await save();
+pass('The editor retains add/save/reopen/remove from five to eight shortcuts and prevents fewer than five');
 for(const p of [[1,1],[monitor.width-1,1],[1,monitor.height-1],[monitor.width-1,monitor.height-1]]){
     ipc('shell','hide',id);move(...p);await openSettings();s=status();assert.ok(s.settingsX>=12&&s.settingsY>=12);assert.ok(s.settingsX+s.settingsWidth<=monitor.width-12&&s.settingsY+s.settingsHeight<=monitor.height-12);key('Escape');
 }

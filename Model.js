@@ -135,7 +135,7 @@ function mergeSettings(document, original, draft) {
             return { error: "Slot " + (i + 1) + " changed elsewhere. Reopen settings to load it." };
         result.actions[i] = draft.actions[i];
     }
-    var fields = ["diameter", "animation", "shortcut", "desktopRightClick"];
+    var fields = ["diameter", "animation", "shape", "shortcut", "desktopRightClick"];
     for (var field = 0; field < fields.length; field++) {
         var name = fields[field];
         if (draft[name] === undefined || original[name] === draft[name]) continue;
@@ -149,8 +149,8 @@ function mergeSettings(document, original, draft) {
 function parse(raw, fallback) {
     var value;
     try { value = JSON.parse(raw); } catch (error) { return { config: fallback, error: "Invalid JSON; using the last valid configuration." }; }
-    if (!value || typeof value !== "object" || !Array.isArray(value.actions) || value.actions.length < 6 || value.actions.length > 8)
-        return { config: fallback, error: "Orb supports six to eight top-level actions." };
+    if (!value || typeof value !== "object" || !Array.isArray(value.actions) || value.actions.length < 5 || value.actions.length > 8)
+        return { config: fallback, error: "Orb supports five to eight top-level actions." };
     var actions = [];
     for (var i = 0; i < value.actions.length; i++) {
         var a = action(value.actions[i], 0);
@@ -162,15 +162,26 @@ function parse(raw, fallback) {
     if (activation.error) return { config: fallback, error: activation.error };
     if (value.desktopRightClick !== undefined && typeof value.desktopRightClick !== "boolean")
         return { config: fallback, error: "Desktop right-click must be on or off." };
+    if (value.shape !== undefined && value.shape !== "circle" && value.shape !== "polygon")
+        return { config: fallback, error: "Choose a circle or polygon wheel." };
     return { config: { actions: actions, diameter: Math.max(220, Math.min(600, Number(value.diameter) || 240)), animation: value.animation !== false,
-        shortcut: activation.value, desktopRightClick: value.desktopRightClick === true }, error: "" };
+        shape: value.shape || "circle", shortcut: activation.value, desktopRightClick: value.desktopRightClick === true }, error: "" };
 }
-function hit(x, y, diameter, count) {
+// Vertices align with actions; sector boundaries meet the middle of each edge.
+// One/two-entry submenu pages retain a circle because no polygon exists there.
+function edgeRadius(angle, diameter, count, shape, radius) {
+    var outer = diameter * (radius === undefined ? 0.48 : radius);
+    if (shape !== "polygon" || count < 3) return outer;
+    var step = Math.PI * 2 / count;
+    var offset = ((angle + Math.PI / 2) % step + step) % step - step / 2;
+    return outer * Math.cos(step / 2) / Math.cos(offset);
+}
+function hit(x, y, diameter, count, shape) {
     if (count === undefined) count = 6;
     if (count < 1) return -1;
     var dx = x - diameter / 2, dy = y - diameter / 2;
     var r = Math.sqrt(dx * dx + dy * dy) / diameter;
-    if (r < 0.18 || r > 0.48) return -1;
+    if (r < 0.18 || Math.sqrt(dx * dx + dy * dy) > edgeRadius(Math.atan2(dy, dx), diameter, count, shape) + 0.000001) return -1;
     var step = 360 / count;
     var angle = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + step / 2 + 360) % 360;
     return Math.floor(angle / step) % count;
@@ -188,5 +199,5 @@ function placement(px, py, width, height, reserved, preferred) {
         x: Math.max(left, Math.min(px - size / 2, left + availableW - size)),
         y: Math.max(top, Math.min(py - size / 2, top + availableH - size - footer)) };
 }
-if (typeof module !== "undefined") module.exports = { parse: parse, action: action, icons: icons, fileActions: fileActions, shortcut: shortcut, bindingConflict: bindingConflict,
+if (typeof module !== "undefined") module.exports = { parse: parse, action: action, icons: icons, fileActions: fileActions, shortcut: shortcut, bindingConflict: bindingConflict, edgeRadius: edgeRadius,
     move: move, hit: hit, placement: placement, mergeSettings: mergeSettings };

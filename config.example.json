@@ -2,6 +2,7 @@
   "shortcut": "SUPER + ALT + O",
   "diameter": 240,
   "animation": true,
+  "shape": "circle",
   "actions": [
     { "label": "Browser", "icon": "browser", "command": ["omarchy", "launch", "browser"] },
     { "label": "Terminal", "icon": "terminal", "command": ["omarchy", "launch", "terminal"] },

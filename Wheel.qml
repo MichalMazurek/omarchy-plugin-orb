@@ -19,7 +19,7 @@ Item {
     property int selected: -1
     property bool keyboardMode: false
     property point pointer: Qt.point(0, 0)
-    property var config: ({ actions: [], diameter: 240, animation: true })
+    property var config: ({ actions: [], diameter: 240, animation: true, shape: "circle" })
     property string submenuTitle: ""
     property bool agentMenu: false
     property var submenuRows: []
@@ -250,6 +250,7 @@ Item {
             settingsOpen: settingsOpen, settingsSaving: settingsSaving, settingsError: settingsError,
             setupReady: setupReady, setupError: setupError,
             settingsX: settingsCard.x, settingsY: settingsCard.y, settingsWidth: settingsCard.width, settingsHeight: settingsCard.height,
+            shape: root.config.shape, draftShape: settingsCard.shape,
             draftDiameter: settingsCard.diameter, draftAnimation: settingsCard.animation,
             draftShortcut: settingsCard.shortcut, draftDesktopRightClick: settingsCard.desktopRightClick,
             preview: settingsCard.previewStatus(), selectedSlot: settingsCard.selectedSlot,
@@ -454,49 +455,12 @@ Item {
             Behavior on opacity { NumberAnimation { duration: root.config.animation ? Commons.Style.duration(150) : 0 } }
             Behavior on scale { NumberAnimation { duration: root.config.animation ? Commons.Style.duration(190) : 0; easing.type: Easing.OutCubic } }
 
-            Rectangle {
-                anchors.centerIn: parent
-                width: parent.width * 0.98; height: width; radius: width / 2
-                color: Commons.Color.menu.background
-                border.width: 1
-                border.color: Commons.Util.alpha(Commons.Color.menu.text, 0.25)
-            }
-            Canvas {
+            WheelSurface {
                 id: ring
                 anchors.fill: parent
-                antialiasing: true
-                property color surface: Commons.Color.menu.background
-                property color ink: Commons.Color.menu.text
-                property color selectedFill: Commons.Color.menu.selectedBackground
-                property color selectedOutline: Commons.Color.menu.selectedBorder
-                property int selection: root.selected
-                property int count: root.selectionCount
-                onCountChanged: requestPaint()
-                onSurfaceChanged: requestPaint()
-                onInkChanged: requestPaint()
-                onSelectedFillChanged: requestPaint()
-                onSelectedOutlineChanged: requestPaint()
-                onSelectionChanged: requestPaint()
-                onWidthChanged: requestPaint()
-                onPaint: {
-                    var c = getContext("2d"); c.reset();
-                    var center = width / 2, outer = width * 0.48, inner = width * 0.18;
-                    c.lineWidth = 1;
-                    var step = 360 / Math.max(1, count);
-                    for (var i = 0; i < count; i++) {
-                        var start = (i * step - 90 - step / 2 + 1) * Math.PI / 180;
-                        var end = (i * step - 90 + step / 2 - 1) * Math.PI / 180;
-                        c.beginPath(); c.arc(center,center,outer,start,end);
-                        c.arc(center,center,inner,end,start,true); c.closePath();
-                        c.fillStyle = surface; c.fill();
-                        if (i === selection) { c.fillStyle = selectedFill; c.fill(); }
-                        c.strokeStyle = i === selection ? selectedOutline : Commons.Util.alpha(ink, 0.23); c.stroke();
-                        if (i === selection) {
-                            c.beginPath(); c.arc(center,center,outer-3,start+0.025,end-0.025);
-                            c.strokeStyle = selectedOutline; c.lineWidth = 3; c.stroke(); c.lineWidth = 1;
-                        }
-                    }
-                }
+                shape: root.config.shape || "circle"
+                count: root.selectionCount
+                selection: root.selected
             }
             Repeater {
                 model: root.wheelActions
@@ -572,11 +536,11 @@ Item {
                 onPositionChanged: mouse => {
                     if (!moveGate.moved(this, mouse)) return;
                     root.keyboardMode = false;
-                    root.selected = Model.hit(mouse.x, mouse.y, width, root.selectionCount);
+                    root.selected = Model.hit(mouse.x, mouse.y, width, root.selectionCount, root.config.shape);
                 }
                 onExited: if (!root.keyboardMode) root.selected = -1
                 onClicked: mouse => {
-                    var i = Model.hit(mouse.x, mouse.y, width, root.selectionCount);
+                    var i = Model.hit(mouse.x, mouse.y, width, root.selectionCount, root.config.shape);
                     if (mouse.button === Qt.LeftButton && i >= 0) root.activate(i);
                     else if (mouse.button === Qt.LeftButton && atCentre) root.activateHub();
                     else root.dismiss();

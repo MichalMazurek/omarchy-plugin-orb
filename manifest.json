@@ -5,7 +5,7 @@
   "version": "0.1.1",
   "author": "Tom Ballard",
   "license": "MIT",
-  "description": "A themed shortcut wheel with six to eight configurable slots and circular submenus.",
+  "description": "A themed shortcut wheel with five to eight slots, circle or polygon outlines, and submenus.",
   "kinds": [
     "menu"
   ],

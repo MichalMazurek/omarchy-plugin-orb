@@ -5,6 +5,7 @@ import "Model.js" as Model
 Item {
     id: preview
     property var actions: []
+    property string shape: "circle"
     property var iconSources: []
     property int selected: 0
     property bool busy: false
@@ -18,60 +19,31 @@ Item {
     signal moved(int from, int to)
     signal assigned(int index, var action)
     function hoverAssignment(action, x, y) {
-        assignmentAction = action; assignmentTarget = Model.hit(x, y, width, actions.length);
+        assignmentAction = action; assignmentTarget = Model.hit(x, y, width, actions.length, shape);
     }
     function cancelAssignment() { assignmentAction = null; assignmentTarget = -1; }
     function dropAssignment(action, x, y) {
-        var index = Model.hit(x, y, width, actions.length);
+        var index = Model.hit(x, y, width, actions.length, shape);
         cancelAssignment();
         if (!busy && index >= 0) assigned(index, action);
     }
-    readonly property int highlighted: assignmentAction ? assignmentTarget : dragging ? dragTo : pointer.containsMouse ? Model.hit(pointer.mouseX, pointer.mouseY, width, actions.length) : selected
+    readonly property int highlighted: assignmentAction ? assignmentTarget : dragging ? dragTo : pointer.containsMouse ? Model.hit(pointer.mouseX, pointer.mouseY, width, actions.length, shape) : selected
     readonly property string caption: assignmentAction ? (assignmentTarget < 0 ? "Drop on a slot · release outside to cancel" : "Replace slot " + (assignmentTarget + 1) + " with " + assignmentAction.label)
         : dragging ? (dragTo < 0 ? "Release outside to cancel" : "Move " + actions[dragFrom].label + " to slot " + (dragTo + 1))
         : highlighted >= 0 && highlighted < actions.length ? actions[highlighted].label : "Click to edit · drag to arrange"
     height: width
 
-    Rectangle {
+    WheelSurface {
         anchors.fill: parent
-        anchors.margins: width * 0.01
-        radius: width / 2
-        color: Commons.Color.menu.background
-        border.width: 1
-        border.color: Commons.Util.alpha(Commons.Color.menu.text, 0.25)
+        shape: preview.shape
+        count: preview.actions.length
+        selection: preview.highlighted
     }
-    Canvas {
-        id: ring
-        anchors.fill: parent
-        antialiasing: true
-        property color surface: Commons.Color.menu.background
-        property color ink: Commons.Color.menu.text
-        property color fill: Commons.Color.menu.selectedBackground
-        property color outline: Commons.Color.menu.selectedBorder
-        property int count: preview.actions.length
-        property int chosen: preview.highlighted
-        onAvailableChanged: if (available) requestPaint()
-        onVisibleChanged: if (visible) requestPaint()
-        onCountChanged: requestPaint()
-        onChosenChanged: requestPaint()
-        onSurfaceChanged: requestPaint()
-        onInkChanged: requestPaint()
-        onFillChanged: requestPaint()
-        onOutlineChanged: requestPaint()
-        onWidthChanged: requestPaint()
-        onPaint: {
-            var c = getContext("2d"); c.reset(); c.lineWidth = 1;
-            if (width <= 0 || height <= 0) return;
-            var center = width / 2, step = 360 / Math.max(1, count);
-            for (var i = 0; i < count; i++) {
-                var start = (i * step - 90 - step / 2 + 1) * Math.PI / 180;
-                var end = (i * step - 90 + step / 2 - 1) * Math.PI / 180;
-                c.beginPath(); c.arc(center, center, width * 0.48, start, end);
-                c.arc(center, center, width * 0.18, end, start, true); c.closePath();
-                c.fillStyle = i === chosen ? fill : surface; c.fill();
-                c.strokeStyle = i === chosen ? outline : Commons.Util.alpha(ink, 0.25); c.stroke();
-            }
-        }
+    Rectangle {
+        anchors.centerIn: parent
+        width: parent.width * 0.32; height: width; radius: width / 2
+        color: Commons.Color.menu.background
+        border.width: 1; border.color: Commons.Util.alpha(Commons.Color.menu.text, 0.18)
     }
     Repeater {
         model: preview.actions
@@ -113,17 +85,17 @@ Item {
         preventStealing: true
         cursorShape: preview.dragging ? Qt.ClosedHandCursor : Qt.PointingHandCursor
         onPressed: mouse => {
-            preview.dragFrom = Model.hit(mouse.x, mouse.y, width, preview.actions.length);
+            preview.dragFrom = Model.hit(mouse.x, mouse.y, width, preview.actions.length, preview.shape);
             preview.pressPoint = Qt.point(mouse.x, mouse.y);
             preview.dragging = false; preview.dragTo = preview.dragFrom;
         }
         onPositionChanged: mouse => {
             if (!pressed || preview.dragFrom < 0) return;
             if (Math.hypot(mouse.x - preview.pressPoint.x, mouse.y - preview.pressPoint.y) > Commons.Style.space(7)) preview.dragging = true;
-            preview.dragTo = Model.hit(mouse.x, mouse.y, width, preview.actions.length);
+            preview.dragTo = Model.hit(mouse.x, mouse.y, width, preview.actions.length, preview.shape);
         }
         onReleased: mouse => {
-            var target = Model.hit(mouse.x, mouse.y, width, preview.actions.length);
+            var target = Model.hit(mouse.x, mouse.y, width, preview.actions.length, preview.shape);
             if (preview.dragging && target >= 0 && target !== preview.dragFrom) preview.moved(preview.dragFrom, target);
             else if (!preview.dragging && preview.dragFrom >= 0 && target === preview.dragFrom) preview.picked(target);
             preview.dragging = false; preview.dragFrom = -1; preview.dragTo = -1;

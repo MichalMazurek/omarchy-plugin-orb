@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Choose circle or polygon outlines; polygon sides follow the shortcut count and the centre stays circular.
+- Configure five to eight shortcuts, including a five-section pentagon.
+
 - Open Files as a circular menu of Home, Recent, Starred and standard folders, including Trash; existing default Files slots gain the menu automatically.
 - Choose Small, Medium or Large wheel sizes, with fine adjustment for custom sizes.
 - Browse actions beside the wheel and drag apps, shortcuts or submenus directly onto slots; click and keyboard assignment remain available.

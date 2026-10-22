@@ -9,6 +9,7 @@ FocusScope {
     id: panel
     property int diameter: 240
     property bool animation: true
+    property string shape: "circle"
     property string shortcut: "SUPER + ALT + O"
     property bool desktopRightClick: false
     property var actions: []
@@ -32,6 +33,7 @@ FocusScope {
     property alias editor: actionEditor
     readonly property var positions: actions.length === 8 ? ["Top", "Upper right", "Right", "Lower right", "Bottom", "Lower left", "Left", "Upper left"]
         : actions.length === 7 ? ["Top", "Upper right", "Right", "Lower right", "Lower left", "Left", "Upper left"]
+        : actions.length === 5 ? ["Top", "Upper right", "Lower right", "Lower left", "Upper left"]
         : ["Top", "Upper right", "Lower right", "Bottom", "Lower left", "Upper left"]
     readonly property bool wide: width >= Commons.Style.space(580)
     readonly property var shortcutCheck: Model.shortcut(shortcut)
@@ -45,7 +47,7 @@ FocusScope {
 
     function begin(config, catalog) {
         original = JSON.parse(JSON.stringify(config));
-        diameter = config.diameter; animation = config.animation;
+        diameter = config.diameter; animation = config.animation; shape = config.shape || "circle";
         shortcut = config.shortcut || "SUPER + ALT + O"; desktopRightClick = config.desktopRightClick === true;
         actions = JSON.parse(JSON.stringify(config.actions)); choices = catalog;
         actionOrigins = actions.map(function(a, i) { return i; });
@@ -55,7 +57,7 @@ FocusScope {
         openingHeight = 0;
         Qt.callLater(function() { slotNavigation.forceActiveFocus(); });
     }
-    function draft() { return { diameter: diameter, animation: animation, actions: actions,
+    function draft() { return { diameter: diameter, animation: animation, shape: shape, actions: actions,
         shortcut: shortcutCheck.error ? shortcut : shortcutCheck.value, desktopRightClick: desktopRightClick,
         actionOrigins: actionOrigins, childOrigins: childOrigins }; }
     function appIcon(action) {
@@ -84,7 +86,7 @@ FocusScope {
     }
     function addSlot() { if (actions.length < 8) editSlot(actions.length); }
     function removeSlot(index) {
-        if (busy || actions.length <= 6 || index < 0 || index >= actions.length) return;
+        if (busy || actions.length <= 5 || index < 0 || index >= actions.length) return;
         var copy = actions.slice(), order = actionOrigins.slice(), childOrder = childOrigins.slice();
         copy.splice(index, 1); order.splice(index, 1); childOrder.splice(index, 1);
         actions = copy; actionOrigins = order; childOrigins = childOrder;
@@ -129,7 +131,7 @@ FocusScope {
     function requestSave() { if (!busy && !shortcutCheck.error && editingSlot < 0) saveRequested(); }
     function previewStatus() {
         var p = preview.mapToItem(panel, 0, 0);
-        return { x: p.x, y: p.y, diameter: preview.width, dragging: preview.dragging, selected: selectedSlot };
+        return { x: p.x, y: p.y, diameter: preview.width, shape: preview.shape, dragging: preview.dragging, selected: selectedSlot };
     }
     function layoutStatus() {
         return { bodyX: body.x, bodyY: body.y, bodyWidth: body.width, bodyHeight: body.height,
@@ -240,7 +242,7 @@ FocusScope {
                     width: Math.min(Commons.Style.space(panel.wide ? 260 : shortcutsLayout.sideBySide ? 170 : 150), parent.width); spacing: Commons.Style.space(10)
                     WheelPreview {
                         id: preview
-                        width: parent.width; actions: panel.actions; selected: panel.selectedSlot; busy: panel.busy
+                        width: parent.width; actions: panel.actions; shape: panel.shape; selected: panel.selectedSlot; busy: panel.busy
                         activeFocusOnTab: panel.browsingActions
                         iconSources: panel.actions.map(function(a) { return panel.appIcon(a); })
                         onPicked: index => { if (panel.browsingActions) { panel.selectedSlot = index; forceActiveFocus(); } else panel.editSlot(index); }
@@ -297,7 +299,7 @@ FocusScope {
                         width: parent.width; spacing: Commons.Style.space(5)
                         EditorButton { text: "←"; width: Commons.Style.space(38); tooltipText: "Move anticlockwise · Alt+Left"; enabled: !panel.busy; onClicked: panel.moveSlot(panel.selectedSlot, (panel.selectedSlot + panel.actions.length - 1) % panel.actions.length) }
                         EditorButton { text: "→"; width: Commons.Style.space(38); tooltipText: "Move clockwise · Alt+Right"; enabled: !panel.busy; onClicked: panel.moveSlot(panel.selectedSlot, (panel.selectedSlot + 1) % panel.actions.length) }
-                        EditorButton { text: "Remove"; enabled: !panel.busy && panel.actions.length > 6; onClicked: panel.removeSlot(panel.selectedSlot) }
+                        EditorButton { objectName: "orb-remove-slot"; text: "Remove"; enabled: !panel.busy && panel.actions.length > 5; onClicked: panel.removeSlot(panel.selectedSlot) }
                     }
                     EditorButton { objectName: "orb-add-slot"; width: parent.width; text: panel.actions.length < 8 ? "+ Add shortcut · " + panel.actions.length + " / 8" : "8 / 8 shortcuts"; enabled: !panel.busy && panel.actions.length < 8; onClicked: panel.addSlot() }
                     EditorLabel { width: parent.width; wrapMode: Text.WordWrap; text: "↑ ↓ select · Enter edits · Alt+← → moves"; opacity: 0.65; font.pixelSize: Commons.Style.space(10) }
@@ -328,6 +330,13 @@ FocusScope {
             Column {
                 visible: panel.editingSlot < 0 && panel.tab === 1
                 width: parent.width; spacing: Commons.Style.space(14)
+                EditorLabel { text: "Wheel shape" }
+                Row {
+                    width: parent.width; spacing: Commons.Style.space(6)
+                    EditorButton { objectName: "orb-shape-circle"; width: (parent.width - parent.spacing) / 2; text: "Circle"; selected: panel.shape === "circle"; enabled: !panel.busy; onClicked: panel.shape = "circle" }
+                    EditorButton { objectName: "orb-shape-polygon"; width: (parent.width - parent.spacing) / 2; text: "Polygon · " + panel.actions.length + " sides"; selected: panel.shape === "polygon"; enabled: !panel.busy; onClicked: panel.shape = "polygon" }
+                }
+                EditorLabel { width: parent.width; text: "Polygon follows your shortcuts. The centre stays circular."; wrapMode: Text.WordWrap; opacity: 0.65 }
                 EditorLabel { text: "Wheel size · " + Math.round(Commons.Style.space(panel.diameter)) + " px" }
                 Row {
                     width: parent.width; spacing: Commons.Style.space(6)

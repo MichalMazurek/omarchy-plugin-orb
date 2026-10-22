@@ -88,16 +88,17 @@ for (let i=0;i<6;i++) {
 }
 console.log('PASS: every slot editable, app IDs validated, untouched settings preserved, concurrent slot conflicts rejected');
 
-for (const count of [6,7,8]) {
+for (const count of [5,6,7,8]) {
   const expanded = clone(base);
   while (expanded.actions.length < count) expanded.actions.push(postcard);
+  expanded.actions.length=count;
   assert.equal(model.parse(JSON.stringify(expanded), null).error, '');
   for (let slot=0;slot<count;slot++) {
     const angle=(slot*360/count-90)*Math.PI/180;
     assert.equal(model.hit(128.5+Math.cos(angle)*85,128.5+Math.sin(angle)*85,257,count),slot);
   }
 }
-for (const count of [5,9]) {
+for (const count of [4,9]) {
   const invalid=clone(base);while(invalid.actions.length<count)invalid.actions.push(postcard);invalid.actions.length=count;
   assert.ok(model.parse(JSON.stringify(invalid),null).error);
 }
@@ -112,4 +113,4 @@ assert.equal(removed.error,'');assert.equal(removed.document.actions.length,6);a
 const concurrentlyEdited=clone(base);concurrentlyEdited.actions[1].label='Different';
 assert.match(model.mergeSettings(concurrentlyEdited,original,expandedDraft).error,/changed elsewhere/);
 assert.equal(model.mergeSettings(added.document,original,original).document.actions.length,8);
-console.log('PASS: 6–8 slots, radial hit regions, add/remove persistence, metadata preservation and structural conflicts');
+console.log('PASS: 5–8 slots, radial hit regions, add/remove persistence, metadata preservation and structural conflicts');
