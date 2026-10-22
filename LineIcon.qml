@@ -27,6 +27,29 @@ Canvas {
             c.strokeRect(2.5,4,19,16); line([6,9,9,12,6,15]); line([12,15,17,15]);
         } else if (name === "files") {
             line([3,20,3,5,9,5,11,8,21,8,21,20,3,20]); line([3,11,21,11]);
+        } else if (name === "home") {
+            line([2,11,12,3,22,11]); line([5,9,5,21,10,21,10,15,14,15,14,21,19,21,19,9]);
+        } else if (name === "recent") {
+            circle(12,12,9); line([12,6,12,12,16,14]);
+        } else if (name === "starred") {
+            var points = [];
+            for (var i = 0; i <= 10; i++) {
+                var angle = (i * 36 - 90) * Math.PI / 180, radius = i % 2 ? 4 : 10;
+                points.push(12 + Math.cos(angle) * radius, 12 + Math.sin(angle) * radius);
+            }
+            line(points);
+        } else if (name === "downloads") {
+            line([12,3,12,15]); line([7,10,12,15,17,10]); line([3,16,3,21,21,21,21,16]);
+        } else if (name === "documents") {
+            line([5,2,14,2,20,8,20,22,5,22,5,2]); line([14,2,14,8,20,8]); line([8,12,16,12]); line([8,17,16,17]);
+        } else if (name === "pictures") {
+            c.strokeRect(3,3,18,18); circle(16,8,2); line([3,18,9,11,14,17,17,14,21,18]);
+        } else if (name === "music") {
+            line([9,18,9,5,20,2,20,15]); circle(6,18,3); circle(17,15,3); line([9,9,20,6]);
+        } else if (name === "videos") {
+            c.strokeRect(2,4,20,16); line([10,8,16,12,10,16,10,8]);
+        } else if (name === "trash") {
+            line([3,6,21,6]); line([9,6,9,3,15,3,15,6]); line([5,6,6,21,18,21,19,6]); line([10,10,10,17]); line([14,10,14,17]);
         } else if (name === "screenshot") {
             line([8,3,3,3,3,8]); line([16,3,21,3,21,8]);
             line([3,16,3,21,8,21]); line([21,16,21,21,16,21]); c.strokeRect(7,7,10,10);

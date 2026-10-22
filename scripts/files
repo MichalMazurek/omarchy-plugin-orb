@@ -1,0 +1,23 @@
+#!/bin/bash
+# Resolve standard user folders at activation time, including renamed XDG dirs.
+set -euo pipefail
+[[ $# == 1 ]] || { echo 'Choose a Files location.' >&2; exit 2; }
+case "$1" in
+  home) location=$HOME ;;
+  recent|starred|trash) location="$1:///" ;;
+  downloads|documents|pictures|music|videos)
+    case "$1" in
+      downloads) directory=DOWNLOAD; fallback=Downloads ;;
+      documents) directory=DOCUMENTS; fallback=Documents ;;
+      pictures) directory=PICTURES; fallback=Pictures ;;
+      music) directory=MUSIC; fallback=Music ;;
+      videos) directory=VIDEOS; fallback=Videos ;;
+    esac
+    location=$(xdg-user-dir "$directory" 2>/dev/null) || location=''
+    [[ $location == /* ]] || location="$HOME/$fallback"
+    [[ -d $location ]] || { printf 'The %s folder is unavailable: %s\n' "$fallback" "$location" >&2; exit 1; }
+    ;;
+  *) echo 'Unknown Files location.' >&2; exit 2 ;;
+esac
+# Match Omarchy's Files launcher, adding the selected path/URI as one argument.
+exec setsid uwsm-app -- nautilus --new-window "$location"

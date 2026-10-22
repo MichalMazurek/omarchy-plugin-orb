@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Open Files as a circular menu of Home, Recent, Starred and standard folders, including Trash; existing default Files slots gain the menu automatically.
 - Choose Small, Medium or Large wheel sizes, with fine adjustment for custom sizes.
 - Browse actions beside the wheel and drag apps, shortcuts or submenus directly onto slots; click and keyboard assignment remain available.
 - Arrange shortcuts by dragging around a wheel preview, with keyboard and button alternatives.

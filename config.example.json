@@ -5,7 +5,7 @@
   "actions": [
     { "label": "Browser", "icon": "browser", "command": ["omarchy", "launch", "browser"] },
     { "label": "Terminal", "icon": "terminal", "command": ["omarchy", "launch", "terminal"] },
-    { "label": "Files", "icon": "files", "command": ["omarchy", "launch", "nautilus"] },
+    { "label": "Files", "icon": "files", "menu": "files" },
     { "label": "Screenshot", "icon": "screenshot", "command": ["omarchy", "capture", "screenshot"] },
     { "label": "Settings", "icon": "settings", "children": [
       { "label": "Themes", "icon": "themes", "command": ["omarchy-shell", "shell", "summon", "omarchy.image-picker", "{\"source\":\"themes\"}"] },

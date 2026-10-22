@@ -146,7 +146,7 @@ Item {
         if (action.menu || action.children) {
             parentSelection = index; submenuTitle = action.label;
             agentMenu = action.menu === "agents";
-            submenuRows = action.children || [];
+            submenuRows = action.menu === "files" ? Model.fileActions(decodeURIComponent(Qt.resolvedUrl("scripts/files").toString().replace(/^file:\/\//, ""))) : action.children || [];
             selected = -1; menuPage = 0; moveGate.reset();
             if (agentMenu) { agentError = ""; installedAgents = []; agents.running = true; }
             return;

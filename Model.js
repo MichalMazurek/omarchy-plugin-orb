@@ -1,5 +1,12 @@
 // Pure geometry and validation, shared by the hosted QML and Node tests.
-var icons = ["browser", "terminal", "files", "screenshot", "themes", "plugins", "agents", "settings", "codex", "claude", "grok", "postcard", "app", "create"];
+var icons = ["browser", "terminal", "files", "screenshot", "themes", "plugins", "agents", "settings", "codex", "claude", "grok", "postcard", "app", "create",
+    "home", "recent", "starred", "downloads", "documents", "pictures", "music", "videos", "trash"];
+function fileActions(helper) {
+    return ["Home", "Recent", "Starred", "Downloads", "Documents", "Pictures", "Music", "Videos", "Trash"].map(function(label) {
+        var id = label.toLowerCase();
+        return { label: label, icon: id, command: ["bash", helper, id] };
+    });
+}
 function shortcut(value) {
     if (value === undefined) value = "SUPER + ALT + O";
     if (typeof value !== "string") return { error: "Choose a Super shortcut with one key." };
@@ -47,7 +54,13 @@ function action(a, depth) {
         if (typeof a.desktopId !== "string" || !/^[A-Za-z0-9_.@+-]{1,255}$/.test(a.desktopId) || a.command || a.menu || a.children) return null;
         out.desktopId = a.desktopId; return out;
     }
-    if (a.menu === "agents" && depth === 0 && !a.command && !a.children) { out.menu = "agents"; return out; }
+    // Upgrade only the original top-level Files shortcut. Custom paths, app
+    // entries and commands inside user submenus keep their existing behaviour.
+    if (depth === 0 && a.label === "Files" && a.icon === "files" && !a.menu && !a.children
+        && JSON.stringify(a.command) === '["omarchy","launch","nautilus"]') {
+        out.menu = "files"; return out;
+    }
+    if ((a.menu === "agents" || a.menu === "files") && depth === 0 && !a.command && !a.children) { out.menu = a.menu; return out; }
     if (Array.isArray(a.children) && depth === 0 && !a.command && !a.menu && a.children.length > 0 && a.children.length <= 12) {
         out.children = a.children.map(function(c) { return action(c, 1); });
         return out.children.every(function(c) { return c !== null; }) ? out : null;
@@ -175,5 +188,5 @@ function placement(px, py, width, height, reserved, preferred) {
         x: Math.max(left, Math.min(px - size / 2, left + availableW - size)),
         y: Math.max(top, Math.min(py - size / 2, top + availableH - size - footer)) };
 }
-if (typeof module !== "undefined") module.exports = { parse: parse, action: action, icons: icons, shortcut: shortcut, bindingConflict: bindingConflict,
+if (typeof module !== "undefined") module.exports = { parse: parse, action: action, icons: icons, fileActions: fileActions, shortcut: shortcut, bindingConflict: bindingConflict,
     move: move, hit: hit, placement: placement, mergeSettings: mergeSettings };
