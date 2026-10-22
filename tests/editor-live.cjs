@@ -44,6 +44,32 @@ async function reset(){ipc('shell','hide',id);fs.writeFileSync(config,fixtureTex
 function saved(){return JSON.parse(fs.readFileSync(config,'utf8'));}
 function previewPoint(s,index){const angle=(index*360/s.draftActions.length-90)*Math.PI/180,p=s.preview;return [s.settingsX+p.x+p.diameter/2+Math.cos(angle)*p.diameter*.33,s.settingsY+p.y+p.diameter/2+Math.sin(angle)*p.diameter*.33];}
 async function choose(query){text(query);await until(()=>status().pickerItems.length>0);key('Return');await sleep(100);}
+async function undoChecks(){
+    await reset();await openSettings();assert.equal(status().version,'0.2.0');assert.equal(control('orb-undo').enabled,false);
+    const original=status().draftActions,origins=status().draftActionOrigins,children=status().draftChildOrigins;
+    await click('orb-tab-1');await click('orb-size-large');await click('orb-shape-polygon');
+    await click('orb-tab-2');await fill('orb-opening-key','F12');await click('orb-tab-0');
+    const opening=[status().settingsWidth,status().settingsHeight];
+    chord('alt','Right');assert.equal(status().undoCount,1);assert.equal(status().draftActions[1].label,'Browser');
+    key('Delete');assert.equal(status().draftActions.length,5);assert.equal(status().undoCount,2);
+    await click('orb-undo');assert.equal(status().draftActions.length,6);assert.equal(status().draftActions[1].label,'Browser');
+    chord('ctrl','z');assert.deepEqual(status().draftActions,original);assert.deepEqual(status().draftActionOrigins,origins);assert.deepEqual(status().draftChildOrigins,children);
+    assert.equal(status().draftDiameter,480);assert.equal(status().draftShape,'polygon');assert.equal(status().draftShortcut.replace(/\s+/g,' '),'SUPER + ALT + F12');assert.equal(control('orb-undo').enabled,false);
+    let s=status();move(...previewPoint(s,0),272,previewPoint(s,2));await until(()=>status().draftActions[2].label==='Browser');await click('orb-undo');assert.deepEqual(status().draftActions,original);
+    await click('orb-add-slot');await choose('Terminal');assert.equal(status().draftActions.length,7);await click('orb-undo');assert.equal(status().draftActions.length,6);
+    await click('orb-slot-4');await fill('orb-action-name','Temporary submenu');await click('orb-action-remove-child-0');await click('orb-action-use');
+    assert.equal(status().draftActions[4].label,'Temporary submenu');await click('orb-undo');assert.deepEqual(status().draftChildOrigins,children);assert.deepEqual(status().draftActions,original);
+    await click('orb-browse-actions');let pick=status();move(...previewPoint(pick,0),272);await fill('orb-catalog-search','Files');await until(()=>status().pickerItems[0]==='Files');await click('orb-catalog-choice-0');assert.equal(status().draftActions[0].label,'Files');await click('orb-undo');assert.deepEqual(status().draftActions,original);
+    // Native text undo must not consume the shortcut history underneath it.
+    s=status();move(...previewPoint(s,0),272,previewPoint(s,1));await until(()=>status().undoCount===1);
+    await fill('orb-catalog-search','Terminal');text('x');chord('ctrl','z');assert.equal(status().undoCount,1,'Text undo changed the shortcut draft');
+    await click('orb-undo');assert.deepEqual(status().draftActions,original);assert.deepEqual([status().settingsWidth,status().settingsHeight],opening);
+    await click('orb-browse-actions');capture('release-settings');await save();assert.equal(saved().diameter,480);assert.equal(saved().shape,'polygon');assert.deepEqual(saved().actions,fixture.actions);
+    await openSettings();assert.equal(status().undoCount,0);assert.equal(control('orb-undo').enabled,false);chord('alt','Right');await click('orb-cancel');
+    await openSettings();assert.equal(status().undoCount,0);assert.deepEqual(status().draftActions,original);await click('orb-cancel');
+    pass('Installed version is shown; Undo restores remove, reorder, drag, add, submenu and catalog edits with identities intact, preserves appearance/opening drafts and text undo, and clears on Save/Cancel');
+    await reset();
+}
 async function appearancePlacement(){
     const [left,top,right,bottom]=monitor.reserved||[0,0,0,0];
     const frame=()=>{const s=status();return [s.settingsX,s.settingsY,s.settingsWidth,s.settingsHeight];};
@@ -80,6 +106,8 @@ fs.writeFileSync(probe,'#!/usr/bin/python3\nimport json,sys,os\noutput='+JSON.st
 (async()=>{try{
 await until(()=>spawnSync('omarchy-shell',[id,'status'],{encoding:'utf8'}).status===0,'Orb did not finish loading');
 await reset();await until(()=>status().setupReady,'Native shortcut setup failed: '+status().setupError);
+await undoChecks();
+if(process.argv.includes('--undo-only'))return;
 if(!process.argv.includes('--submenu-only'))await appearancePlacement();
 if(process.argv.includes('--appearance-only'))return;
 move(monitor.width/2,monitor.height/2);
@@ -172,5 +200,5 @@ throw error;
 }finally{
 try{ipc('shell','hide',id);}catch{}
 fs.writeFileSync(config,oldText);
-fs.writeFileSync(path.join(repo,'artifacts/editor-live-results.json'),JSON.stringify({date:new Date().toISOString(),source:run('git','-C',repo,'rev-parse','HEAD'),workingTree:run('git','-C',repo,'status','--short'),runtimeHashes:Object.fromEntries(['ActionPicker.qml','ActionEditor.qml','SettingsPanel.qml','WheelPreview.qml','Wheel.qml','Model.js'].map(f=>[f,require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(repo,f))).digest('hex')])),omarchy:run('git','-C',process.env.OMARCHY_PATH,'rev-parse','HEAD'),display:{width:monitor.width,height:monitor.height,scale:monitor.scale},report},null,2)+'\n');
+fs.writeFileSync(path.join(repo,'artifacts/editor-live-results.json'),JSON.stringify({date:new Date().toISOString(),source:run('git','-C',repo,'rev-parse','HEAD'),workingTree:run('git','-C',repo,'status','--short'),runtimeHashes:Object.fromEntries(['ActionPicker.qml','ActionEditor.qml','SettingsPanel.qml','WheelPreview.qml','Wheel.qml','Model.js','OrbOverlay.qml','ShortcutHistory.js','AppLibraryCompat.qml'].map(f=>[f,require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(repo,f))).digest('hex')])),omarchy:run('git','-C',process.env.OMARCHY_PATH,'rev-parse','HEAD'),display:{width:monitor.width,height:monitor.height,scale:monitor.scale},report},null,2)+'\n');
 }})().catch(error=>{console.error(error);process.exitCode=1;});

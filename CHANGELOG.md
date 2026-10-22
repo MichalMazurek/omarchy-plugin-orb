@@ -1,10 +1,13 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 — release candidate
+
+- Open on Omarchy 4.0.6 without depending on the newer shell's overlay and animation helpers; keep the installed-app catalog available when that shell omits its app-library service.
+- Undo shortcut additions, removals, replacements and reordering with Undo or Ctrl+Z, keeping appearance and opening drafts.
+- Show the installed version in Settings.
 
 - Choose circle or polygon outlines; polygon sides follow the shortcut count and the centre stays circular.
 - Configure five to eight shortcuts, including a five-section pentagon.
-
 - Open Files as a circular menu of Home, Recent, Starred and standard folders, including Trash; existing default Files slots gain the menu automatically.
 - Choose Small, Medium or Large wheel sizes, with fine adjustment for custom sizes.
 - Browse actions beside the wheel and drag apps, shortcuts or submenus directly onto slots; click and keyboard assignment remain available.

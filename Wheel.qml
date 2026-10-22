@@ -35,7 +35,12 @@ Item {
     property var pendingCommand: []
     property string pendingDesktopId: ""
     property string lastDispatch: ""
-    readonly property var appLibrary: shell ? shell.appLibrary : null
+    readonly property var appLibrary: applicationLibrary
+    AppLibraryCompat {
+        id: applicationLibrary
+        nativeLibrary: root.shell ? root.shell.appLibrary : null
+        omarchyPath: root.omarchyPath
+    }
     property int appRevision: 0
     property string lastAction: ""
     property bool settingsOpen: false
@@ -56,6 +61,12 @@ Item {
     function requestSetup() {
         setupPending = true;
         setupDelay.restart();
+    }
+    function animationDuration(milliseconds) {
+        if (!config.animation) return 0;
+        // Omarchy 4.0.6 predates Style.duration; newer shells also honour the
+        // desktop's reduced-motion setting through this function.
+        return typeof Commons.Style.duration === "function" ? Commons.Style.duration(milliseconds) : milliseconds;
     }
     function updateBindings(document) {
         var signature = JSON.stringify([document.shortcut || "SUPER + ALT + O", document.desktopRightClick === true]);
@@ -248,6 +259,8 @@ Item {
             captionFontSize: hint.font.pixelSize, footerHeight: panel.placement.footer,
             hubActive: hubActive,
             settingsOpen: settingsOpen, settingsSaving: settingsSaving, settingsError: settingsError,
+            version: settingsCard.version, undoCount: settingsCard.shortcutHistory.length,
+            draftActionOrigins: settingsCard.actionOrigins, draftChildOrigins: settingsCard.childOrigins,
             setupReady: setupReady, setupError: setupError,
             settingsX: settingsCard.x, settingsY: settingsCard.y, settingsWidth: settingsCard.width, settingsHeight: settingsCard.height,
             shape: root.config.shape, draftShape: settingsCard.shape,
@@ -263,6 +276,7 @@ Item {
             editorArguments: settingsCard.editor.commandArguments, editorChildren: settingsCard.editor.submenuActions,
             draftActions: settingsCard.actions, settingsTab: settingsCard.tab, editingSlot: settingsCard.editingSlot,
             pickerItems: settingsCard.pickerTitles(), browsingActions: settingsCard.browsingActions,
+            appLibraryFallback: applicationLibrary.fallback, catalogAppCount: settingsCard.choices.filter(function(c) { return !!c.action.desktopId; }).length,
             screen: panel.targetScreen ? panel.targetScreen.name : "", error: configError,
             foreground: String(Commons.Color.menu.text), background: String(Commons.Color.menu.background),
             lastAction: lastAction, lastDispatch: lastDispatch, pendingDesktopId: pendingDesktopId, launchPending: launchDelay.running,
@@ -384,7 +398,10 @@ Item {
     }
     Connections {
         target: root.appLibrary
-        function onAppsChanged() { root.appRevision++; }
+        function onAppsChanged() {
+            root.appRevision++;
+            if (root.settingsOpen) settingsCard.choices = root.settingsChoices();
+        }
     }
     Process {
         id: agents
@@ -409,7 +426,7 @@ Item {
         target: root.pluginId
         function status(): string { return root.status(); }
     }
-    OverlayWindow {
+    OrbOverlay {
         id: panel
         shown: root.opened
         shownKeyboardFocus: root.opened ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
@@ -452,8 +469,8 @@ Item {
             visible: root.positioned && !root.settingsOpen
             opacity: root.opened && root.positioned && panel.contentRevealed ? 1 : 0
             scale: opacity > 0 ? 1 : 0.92
-            Behavior on opacity { NumberAnimation { duration: root.config.animation ? Commons.Style.duration(150) : 0 } }
-            Behavior on scale { NumberAnimation { duration: root.config.animation ? Commons.Style.duration(190) : 0; easing.type: Easing.OutCubic } }
+            Behavior on opacity { NumberAnimation { duration: root.animationDuration(150) } }
+            Behavior on scale { NumberAnimation { duration: root.animationDuration(190); easing.type: Easing.OutCubic } }
 
             WheelSurface {
                 id: ring
@@ -489,8 +506,8 @@ Item {
                 color: root.hubActive ? Commons.Color.menu.selectedBackground : Commons.Color.menu.background
                 border.width: 1
                 border.color: root.hubActive ? Commons.Color.menu.selectedBorder : Commons.Util.alpha(Commons.Color.menu.text, 0.18)
-                Behavior on color { ColorAnimation { duration: root.config.animation ? Commons.Style.duration(140) : 0 } }
-                Behavior on border.color { ColorAnimation { duration: root.config.animation ? Commons.Style.duration(140) : 0 } }
+                Behavior on color { ColorAnimation { duration: root.animationDuration(140) } }
+                Behavior on border.color { ColorAnimation { duration: root.animationDuration(140) } }
                 Image {
                     id: omarchyMark
                     anchors.centerIn: parent
@@ -515,7 +532,7 @@ Item {
                     shadowHorizontalOffset: 0
                     shadowVerticalOffset: 0
                     shadowOpacity: root.hubActive ? 0.85 : 0
-                    Behavior on shadowOpacity { NumberAnimation { duration: root.config.animation ? Commons.Style.duration(140) : 0 } }
+                    Behavior on shadowOpacity { NumberAnimation { duration: root.animationDuration(140) } }
                 }
                 LineIcon {
                     visible: !!root.submenuTitle
@@ -583,6 +600,7 @@ Item {
         }
         SettingsPanel {
             id: settingsCard
+            version: root.manifest ? String(root.manifest.version || "") : ""
             visible: root.opened && root.positioned && root.settingsOpen
             readonly property var reserved: panel.monitorData.reserved || [0, 0, 0, 0]
             readonly property rect availableArea: Qt.rect(reserved[0] + 12, reserved[1] + 12,

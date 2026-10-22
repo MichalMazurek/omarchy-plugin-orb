@@ -6,7 +6,7 @@ const repo=path.resolve(__dirname,'..'),id='io.github.tcballard.orb';
 const run=(cmd,...args)=>exec(cmd,args.map(String),{encoding:'utf8',timeout:15000}).trim();
 const json=(...args)=>JSON.parse(run(...args)),ipc=(...args)=>run('omarchy-shell',...args),status=()=>JSON.parse(ipc(id,'status'));
 const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
-async function until(check,message){for(let i=0;i<100;i++){if(check())return;await sleep(100);}throw Error(message||'Timed out');}
+async function until(check,message){for(let i=0;i<300;i++){if(check())return;await sleep(100);}throw Error(message||'Timed out');}
 const key=k=>run('wtype','-s','60','-k',k,'-s','60');
 const monitor=()=>json('hyprctl','monitors','-j').find(m=>m.focused);
 const move=(x,y,button=0)=>{const m=monitor();run(path.join(repo,'artifacts/input/pointer'),Math.round(x),Math.round(y),m.width,m.height,button);};

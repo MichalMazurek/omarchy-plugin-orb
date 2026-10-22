@@ -6,11 +6,11 @@
 
 Launch apps, switch themes and open your installed coding agents from a wheel near your pointer. Press **Super+Alt+O**, then click an icon or select it with the keyboard and press Enter. Choose five to eight shortcuts in Orb’s settings; the wheel follows your Omarchy shell theme.
 
-**For current Omarchy Quattro.** [Install and update](#install).
+**For Omarchy Quattro.** This branch prepares v0.2.0; the normal install command tracks `main`. [Install and update](#install) · [Release evidence](docs/ACCEPTANCE.json).
 
-![Orb with eight configured slots and a selected Browser action](preview.png)
+![Orb with a five-section polygon and a circular centre](preview.png)
 
-Real XPS capture with eight shortcuts; six by default. [Capture details](docs/PREVIEW.json).
+Native capture with five shortcuts in Polygon mode; six and Circle remain the defaults. [Capture details](docs/PREVIEW.json).
 
 Inspired by **Tangerine for Mac**. Original implementation built from Tom Ballard’s [Omarchy plugin starter](https://github.com/tcballard/build-omarchy-plugins). [Credits](CREDITS.md).
 
@@ -38,7 +38,7 @@ For an existing v0.1.0 install that tracks a local source checkout, remove and a
 
 Disabling or removing Orb releases its runtime bindings; your Orb settings remain. The old installer’s unmodified binding module is migrated automatically, with backups. User-modified legacy modules are preserved and reported for review.
 
-Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the normal Omarchy launchers, Bash, Git, jq and libnotify. Node and a compiler are only development dependencies.
+Requires Quattro with `PointerMoveGate`, the normal Omarchy launchers, Bash, Git, jq and libnotify. Orb includes compatibility for the Omarchy 4.0.6 shell's missing overlay, animation helper and menu app-library service. Node and a compiler are only development dependencies. The tested source and package scope is recorded in [acceptance evidence](docs/ACCEPTANCE.json).
 
 ## Use and configure
 
@@ -47,6 +47,7 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 - Arrow keys or Tab/Shift+Tab cycle; 1–8 select an available slot; Enter launches. Home selects the centre button; Enter opens Orb settings (or goes back in a submenu).
 - **Shortcuts** shows your layout as a wheel. Drag an icon to another sector to move it, or use the arrow buttons / Alt+Left and Alt+Right. **Browse actions** opens a searchable picker beside the wheel: drag an app, shortcut or submenu onto any slot. Click a slot and choose an action, or use the picker's arrow keys and Enter, for the same assignment. Changes stay in the draft until **Save**. **Back to shortcuts** returns to the slot list; click a sector or row to edit it. Arrow keys select rows; Enter edits. **Add shortcut** expands up to eight; **Remove** or Delete removes the selected shortcut down to five.
 - The action editor offers **Apps & shortcuts**, **Custom command**, and **Submenu**. Custom commands have a name, icon, program and separate argument fields; spaces stay inside the argument and shell punctuation is passed literally. Submenus contain up to twelve app, shortcut or custom-command actions, with controls to add, edit, reorder and remove them. Submenus cannot contain another submenu. **Use command / Use submenu** stages the change; Back/Escape discards that editor's draft.
+- **Undo** or Ctrl+Z on Shortcuts restores the last shortcut addition, removal, replacement or reorder. It keeps your Appearance and Opening drafts. Text fields retain their own Undo. History lasts until Save or Cancel; up to forty shortcut edits can be restored. The header shows the installed Orb version.
 - **Opening** changes the Super shortcut and optional desktop right-click. Choose Ctrl/Alt/Shift and a letter, number, F1–F12 or Space. Conflicts appear before saving and preserve the existing binding. Changes apply live.
 - **Appearance** offers **Circle** or **Polygon** outlines. Polygon follows the shortcut count: five makes a pentagon, six a hexagon, and so on; the centre always stays circular. The Shortcuts preview follows your draft shape. Choose **Small**, **Medium** or **Large** wheel sizes, with a slider for fine adjustment and a separate opening-animation toggle. Existing custom sizes are retained. **Save** or Ctrl+S applies all staged settings; **Cancel/Escape** discards them. Tab moves between controls. Settings opens centred in the screen’s usable area and keeps its opening size across tabs and action editors, scrolling longer content inside the panel.
 - Escape/Left/Backspace or the centre button returns from a submenu. Escape on the wheel, outside click, or the summon shortcut again dismisses.
@@ -55,13 +56,13 @@ Requires current Quattro with `qs.Ui.OverlayWindow` and `PointerMoveGate`, the n
 - Submenus with more than six actions use footer arrows, scrolling or Page Up/Down.
 - **Files** opens a submenu for **Home, Recent, Starred, Downloads, Documents, Pictures, Music, Videos and Trash**. Pick a location to open it in Files; scroll or use the footer arrows for the second page. The centre button or Escape returns to the main wheel. Standard folders follow your XDG directory settings. Existing default Files shortcuts gain this menu automatically; custom file commands and app entries keep their configured behaviour.
 - **Make something cool** is an optional slot: search for it in Apps & shortcuts to add a circular **New theme / New plugin / New app** menu. Selecting a starter opens your default Omarchy agent with the same prompt used by the native Agents panel.
-- Opening animates for 190ms; system reduced motion is respected.
+- Opening animates for 190ms; newer shells' reduced-motion setting is respected. Appearance also offers an explicit animation toggle.
 
-![Orb settings with a draggable wheel preview and the default six shortcuts](docs/catalog-settings.png)
+![Orb settings with a draggable polygon preview, Undo and the installed version](docs/v0.2.0-settings.png)
 
-![Browse actions beside the wheel and assign them directly to slots](docs/catalog-browser.png)
+![Browse actions beside the wheel and assign them directly to slots](docs/v0.2.0-browser.png)
 
-Native captures and current editor checks: [Catalog and size-preset evidence](docs/CATALOG-ACCEPTANCE.json). Earlier editor checks: [Settings acceptance evidence](docs/SETTINGS-ACCEPTANCE.json).
+Current native captures and checks: [v0.2.0 acceptance evidence](docs/ACCEPTANCE.json). Earlier editor checks: [Catalog and size presets](docs/CATALOG-ACCEPTANCE.json) · [Settings](docs/SETTINGS-ACCEPTANCE.json).
 
 Settings remain in `~/.config/omarchy/orb.json`, and can still be edited directly. See [the example](config.example.json). Five to eight top-level actions, one submenu level, the installed-agent menu (`"menu": "agents"`), Files locations (`"menu": "files"`), shape (`"circle"` or `"polygon"`), size, animation, shortcut and desktop activation are supported. The default diameter is 240 theme units. App choices store a `desktopId` and launch through Quattro’s app library; icons follow the installed application. Custom commands run as argument arrays without shell-string evaluation. Orb preserves unrelated settings and metadata on moved or edited actions, and rejects conflicting external edits. Invalid configuration retains the last valid actions and shows an error hint.
 
@@ -75,13 +76,13 @@ omarchy-shell io.github.tcballard.orb status
 
 ## Verification and limits
 
-Developed on a Dell XPS 9320, 1920×1200 at scale 1, Omarchy dev `5f7aaeb8c`. [Acceptance evidence](docs/ACCEPTANCE.json) separates portable checks from direct desktop tests. [Development](docs/DEVELOPMENT.md) · [Architecture](ARCHITECTURE.md) · [Demo and recording](docs/DEMO.md).
+Developed on a Dell XPS 9320. [Acceptance evidence](docs/ACCEPTANCE.json) separates portable checks, native tests in owned Omadev sessions and historical owner reports. It records the exact Omarchy source, display and installed package scope. [Development](docs/DEVELOPMENT.md) · [Architecture](ARCHITECTURE.md) · [Demo and recording](docs/DEMO.md).
 
-Five to eight configurable top-level entries with one submenu level. Agent discovery filters out first-run installer wrappers, requires a real installed executable, and does not alter the default agent. Multiple physical monitors, hotplug and fractional scaling need further live testing. Screenshot verification covers opening and cancelling the capture UI, not saving a capture. Theme verification uses real shell palette-change IPC and restores it; full desktop/app retinting is not exercised. The owner confirmed final native validation, physical shortcut/focus behaviour, the six-to-eight-to-six saved-slot flow, light/dark captions and reinstall on 2026-10-19; automated evidence remains separately identified.
+Five to eight configurable top-level entries with one submenu level. Agent discovery filters out first-run installer wrappers, requires a real installed executable, and does not alter the default agent. Multiple physical monitors, hotplug and fractional scaling need further live testing. Screenshot verification covers opening and cancelling the capture UI, not saving a capture. Historical theme checks use real shell palette-change IPC and restore it; full desktop/app retinting is not exercised. Historical physical-key and launcher checks remain separately recorded; nested tests do not recreate a complete historical Omarchy package installation.
 
 Codex, Claude and Grok use the product marks bundled with Omarchy’s agents panel, with contrasting variants for light and dark themes. [Asset provenance](CREDITS.md#agent-marks).
 
-Version 0.1.1 fixes native installation. Portable lifecycle fixtures, QML parsing and the upstream manifest validator pass. Tom has tested v0.1.1 on his XPS and confirmed that it works. This is owner-reported acceptance; new instrumented lifecycle logs were not collected. Version 0.1.0’s owner acceptance applies to the previous installer flow. Marketplace snapshot updates require maintainer approval.
+The published v0.1.1 owner acceptance is retained in [the historical record](docs/history/v0.1.1-ACCEPTANCE.json). Marketplace snapshot updates require maintainer approval.
 
 Orb itself makes no network requests and requires no authentication. Applications and agents you launch can use their own network connections and accounts. Agent discovery reads installed executables and, when present, the local mise inventory; it does not install agents. Runtime helpers require the normal Omarchy launchers, Bash, jq and standard system utilities. The plugin reads the pointer position with `hyprctl` and starts the selected application or agent after dismissing the wheel.
 

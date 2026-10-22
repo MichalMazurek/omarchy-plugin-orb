@@ -4,6 +4,7 @@ import QtQuick.Controls as Controls
 import qs.Commons as Commons
 import qs.Ui
 import "Model.js" as Model
+import "ShortcutHistory.js" as History
 
 FocusScope {
     id: panel
@@ -15,6 +16,8 @@ FocusScope {
     property var actions: []
     property var actionOrigins: []
     property var childOrigins: []
+    property var shortcutHistory: []
+    property string version: ""
     property var original: ({})
     property var choices: []
     property var appLibrary: null
@@ -52,6 +55,7 @@ FocusScope {
         actions = JSON.parse(JSON.stringify(config.actions)); choices = catalog;
         actionOrigins = actions.map(function(a, i) { return i; });
         childOrigins = actions.map(function(a) { return a.children ? a.children.map(function(c, i) { return i; }) : []; });
+        shortcutHistory = [];
         tab = 0; selectedSlot = 0; editingSlot = -1; body.contentY = 0;
         browsingActions = false; actionBrowser.reset(); clearAssignment();
         openingHeight = 0;
@@ -85,23 +89,36 @@ FocusScope {
         body.contentY = 0; slotNavigation.forceActiveFocus();
     }
     function addSlot() { if (actions.length < 8) editSlot(actions.length); }
+    function setShortcuts(nextActions, nextOrigins, nextChildren, selection) {
+        var before = History.snapshot(panel);
+        if (JSON.stringify([actions, actionOrigins, childOrigins]) === JSON.stringify([nextActions, nextOrigins, nextChildren])) return;
+        shortcutHistory = History.remember(shortcutHistory, before);
+        actions = nextActions; actionOrigins = nextOrigins; childOrigins = nextChildren; selectedSlot = selection;
+    }
+    function undoShortcuts() {
+        if (busy || editingSlot >= 0 || !shortcutHistory.length) return;
+        var previous = shortcutHistory[shortcutHistory.length - 1];
+        shortcutHistory = shortcutHistory.slice(0, -1);
+        actions = previous.actions; actionOrigins = previous.actionOrigins; childOrigins = previous.childOrigins;
+        selectedSlot = previous.selectedSlot; clearAssignment();
+        if (browsingActions) preview.forceActiveFocus(); else slotNavigation.forceActiveFocus();
+    }
     function removeSlot(index) {
         if (busy || actions.length <= 5 || index < 0 || index >= actions.length) return;
         var copy = actions.slice(), order = actionOrigins.slice(), childOrder = childOrigins.slice();
         copy.splice(index, 1); order.splice(index, 1); childOrder.splice(index, 1);
-        actions = copy; actionOrigins = order; childOrigins = childOrder;
-        selectedSlot = Math.min(index, actions.length - 1); slotNavigation.forceActiveFocus();
+        setShortcuts(copy, order, childOrder, Math.min(index, copy.length - 1));
+        slotNavigation.forceActiveFocus();
     }
     function chooseAction(value, childrenOrder) {
         var copy = actions.slice(), order = actionOrigins.slice(), childOrder = childOrigins.slice();
         if (editingSlot === actions.length) order.push(-1);
         copy[editingSlot] = value; childOrder[editingSlot] = childrenOrder || [];
-        actions = copy; actionOrigins = order; childOrigins = childOrder; backToSlots();
+        setShortcuts(copy, order, childOrder, editingSlot); backToSlots();
     }
     function moveSlot(from, to) {
         if (busy || from < 0 || to < 0 || from >= actions.length || to >= actions.length) return;
-        actions = Model.move(actions, from, to); actionOrigins = Model.move(actionOrigins, from, to); childOrigins = Model.move(childOrigins, from, to);
-        selectedSlot = to;
+        setShortcuts(Model.move(actions, from, to), Model.move(actionOrigins, from, to), Model.move(childOrigins, from, to), to);
         if (browsingActions) actionBrowser.focusSearch(); else slotNavigation.forceActiveFocus();
     }
     function browseActions() {
@@ -114,7 +131,7 @@ FocusScope {
         if (!checked) return;
         var copy = actions.slice(), childOrder = childOrigins.slice();
         copy[index] = checked; childOrder[index] = checked.children ? checked.children.map(function() { return -1; }) : [];
-        actions = copy; childOrigins = childOrder; selectedSlot = index;
+        setShortcuts(copy, actionOrigins.slice(), childOrder, index);
     }
     function clearAssignment() { draggedAction = null; draggedIconSource = ""; preview.cancelAssignment(); }
     function pickerTitles() { return browsingActions && editingSlot < 0 ? actionBrowser.titles() : editingSlot >= 0 ? actionEditor.pickerTitles() : []; }
@@ -160,6 +177,7 @@ FocusScope {
         if (editingSlot >= 0) return;
         if (event.key === Qt.Key_Escape) { canceled(); event.accepted = true; }
         else if (event.key === Qt.Key_S && (event.modifiers & Qt.ControlModifier)) { requestSave(); event.accepted = true; }
+        else if (tab === 0 && event.key === Qt.Key_Z && event.modifiers === Qt.ControlModifier && shortcutHistory.length) { undoShortcuts(); event.accepted = true; }
         else if (tab === 0 && (event.modifiers & Qt.AltModifier) && (event.key === Qt.Key_Left || event.key === Qt.Key_Right)) {
             moveSlot(selectedSlot, (selectedSlot + (event.key === Qt.Key_Right ? 1 : actions.length - 1)) % actions.length); event.accepted = true;
         }
@@ -173,7 +191,11 @@ FocusScope {
     Column {
         id: header
         x: Commons.Style.space(18); y: x; width: parent.width - x * 2; spacing: Commons.Style.space(10)
-        EditorLabel { width: parent.width; text: panel.editingSlot >= 0 ? actionEditor.pageTitle : "Orb settings"; font.pixelSize: Commons.Style.space(20); font.weight: Font.DemiBold }
+        Row {
+            width: parent.width; spacing: Commons.Style.space(10)
+            EditorLabel { width: parent.width - versionLabel.width - parent.spacing; text: panel.editingSlot >= 0 ? actionEditor.pageTitle : "Orb settings"; font.pixelSize: Commons.Style.space(20); font.weight: Font.DemiBold; elide: Text.ElideRight }
+            EditorLabel { id: versionLabel; objectName: "orb-version"; text: panel.version ? "v" + panel.version : ""; opacity: 0.6; anchors.verticalCenter: parent.verticalCenter }
+        }
         EditorLabel {
             width: parent.width; wrapMode: Text.WordWrap; opacity: 0.65
             text: panel.editingSlot >= 0 ? (panel.editingSlot === panel.actions.length ? "Add a shortcut to your wheel" : "Slot " + (panel.editingSlot + 1) + " · " + panel.positions[panel.editingSlot])
@@ -254,6 +276,7 @@ FocusScope {
                     EditorLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: preview.caption; wrapMode: Text.WordWrap }
                     EditorLabel { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: panel.browsingActions ? "Drag an action onto a slot" : "Drag to arrange · click to edit"; wrapMode: Text.WordWrap; opacity: 0.65; font.pixelSize: Commons.Style.space(10) }
                     EditorButton { objectName: "orb-browse-actions"; width: parent.width; text: panel.browsingActions ? "Back to shortcuts" : "Browse actions"; selected: panel.browsingActions; enabled: !panel.busy; onClicked: panel.browseActions() }
+                    EditorButton { objectName: "orb-undo"; width: parent.width; text: "Undo"; tooltipText: "Undo shortcut edit · Ctrl+Z"; enabled: !panel.busy && panel.shortcutHistory.length > 0; onClicked: panel.undoShortcuts() }
                 }
                 Column {
                     id: slotColumn
