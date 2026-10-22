@@ -15,6 +15,7 @@ const existing=new Set(clients().map(w=>w.address));
 const config=path.join(process.env.XDG_CONFIG_HOME,'omarchy/orb.json'),dirsConfig=path.join(process.env.XDG_CONFIG_HOME,'user-dirs.dirs');
 assert.ok(config.startsWith(process.env.OMADEV_HOME+'/'));
 const original=fs.readFileSync(config,'utf8'),originalDirs=fs.existsSync(dirsConfig)?fs.readFileSync(dirsConfig):null;
+const originalDirsLink=fs.lstatSync(dirsConfig,{throwIfNoEntry:false})?.isSymbolicLink()?fs.readlinkSync(dirsConfig):null;
 const labels=['Home','Recent','Starred','Downloads','Documents','Pictures','Music','Videos','Trash'],report=[];
 const fixture=JSON.parse(fs.readFileSync(path.join(repo,'config.example.json')));
 fixture.animation=false;fixture.desktopRightClick=false;
@@ -42,7 +43,11 @@ function capture(name,wheel=true){
 }
 const pass=message=>{report.push(message);console.log('PASS:',message);};
 (async()=>{try{
-    await until(()=>status().setupReady);fs.writeFileSync(config,fixtureText);fs.writeFileSync(dirsConfig,dirsText);
+    await until(()=>status().setupReady);fs.writeFileSync(config,fixtureText);
+    // omadev shares most non-Omarchy app config through symlinks. Replace this
+    // link inside our owned nest before writing fixtures; never follow it.
+    if(originalDirsLink!==null)fs.unlinkSync(dirsConfig);
+    fs.writeFileSync(dirsConfig,dirsText);
     await until(()=>status().visibleItems.length===6&&status().visibleItems[1]==='Terminal');
     await openFiles(true);let s=status();assert.deepEqual(s.items,labels);assert.equal(s.pages,2);assert.deepEqual(s.visibleItems,labels.slice(0,6));
     capture('files-menu-first');const frame=[s.x,s.y,s.diameter];key('Page_Down');assert.deepEqual(status().visibleItems,labels.slice(6));
@@ -72,6 +77,8 @@ const pass=message=>{report.push(message);console.log('PASS:',message);};
 }catch(error){try{capture('files-failure',false);fs.writeFileSync(path.join(repo,'artifacts/files-failure.json'),JSON.stringify(status(),null,2));}catch{}throw error;
 }finally{
     try{ipc('shell','hide',id);await closeCreated();}catch{}
-    fs.writeFileSync(config,original);if(originalDirs===null)fs.rmSync(dirsConfig,{force:true});else fs.writeFileSync(dirsConfig,originalDirs);
+    fs.writeFileSync(config,original);
+    if(originalDirsLink!==null){fs.rmSync(dirsConfig,{force:true});fs.symlinkSync(originalDirsLink,dirsConfig);}
+    else if(originalDirs===null)fs.rmSync(dirsConfig,{force:true});else fs.writeFileSync(dirsConfig,originalDirs);
     fs.writeFileSync(path.join(repo,'artifacts/files-live-results.json'),JSON.stringify({date:new Date().toISOString(),source:run('git','-C',repo,'rev-parse','HEAD'),display:monitor(),report,runtimeHashes:Object.fromEntries(['Wheel.qml','Model.js','LineIcon.qml','scripts/files','config.example.json'].map(f=>[f,require('node:crypto').createHash('sha256').update(fs.readFileSync(path.join(repo,f))).digest('hex')]))},null,2)+'\n');
 }})().catch(error=>{console.error(error);process.exitCode=1;});
