@@ -1,18 +1,25 @@
 {
-  "date": "2026-10-19T01:16:26.157Z",
-  "input_commit": "ca112249cf16e710808ebab72eeafd37071fa224",
+  "date": "2026-10-22T23:52:33.295Z",
+  "input_commit": "a44d7d01e066086ab6cca9b4b95a366f3aeb3be7",
   "output": "preview.png",
+  "file": "preview.png",
+  "width": 436,
+  "height": 493,
+  "sha256": "99b8e983300f98e56fd817fcd64dd1f8302994ca2622f3bc8e8c80a697081c33",
+  "shape": "polygon",
+  "count": 5,
+  "settings": false,
+  "caption": "Browser",
   "diameter": 420,
+  "theme_units": 360,
   "items": [
     "Browser",
-    "Ghostty",
+    "Terminal",
     "Files",
-    "Postcard",
-    "Flea",
-    "Agents",
-    "Make something cool",
-    "Omarchy Arcade"
+    "Settings",
+    "Agents"
   ],
-  "caption": "Browser",
-  "monitor": "eDP-1"
+  "monitor": "WAYLAND-1",
+  "omarchy": "237f1b4071a0bff2296c6d740ba2b9fd695ebfa0",
+  "scope": "Native still in an owned Omadev session on the XPS. Default actions with Screenshot removed for five slots, Polygon enabled; original nest config restored."
 }

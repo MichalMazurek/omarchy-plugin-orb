@@ -1,440 +1,266 @@
 {
-  "status": "owner-confirmed",
-  "version": "0.1.1",
-  "input_commit": "ec3d6e752ed3240dcc7bc168cd011a1aeefcf0b2",
-  "date": "2026-10-20T01:43:26.224174+00:00",
-  "platform": "Portable Linux workspace; no running Omarchy/Hyprland desktop",
+  "schemaVersion": 1,
+  "status": "passed",
+  "version": "0.2.0",
+  "input_commit": "a44d7d01e066086ab6cca9b4b95a366f3aeb3be7",
+  "date": "2026-10-23T00:00:16.314Z",
+  "platform": "Dell XPS 9320, x86_64 Linux; owned Omadev sessions at 944x1150 and 640x760, scale 1",
   "commands": [
-    "./tests/run",
-    "texlua tests/desktop-click.lua",
-    "Qt 6.10.2 qmlformat -n Wheel.qml and SettingsPanel.qml",
-    "Official omarchy-plugin-validate from 81fd2d23ca6e3462183a4dc8360de3113fa8d80c",
-    "Trusted validate_plugin.py --strict --security --publish"
+    "./tests/native",
+    "node tests/editor-live.cjs",
+    "node tests/shapes-live.cjs",
+    "node tests/files-live.cjs",
+    "node tests/app-library-live.cjs (both shells)",
+    "node tests/editor-live.cjs --appearance-only (compact current shell)",
+    "node tests/release-live.cjs"
   ],
   "results": [
     {
-      "name": "26 Node tests plus geometry/configuration and Bash checks",
+      "name": "Portable and native validation",
       "pass": true,
-      "scope": "Actual setup scripts with isolated command fixtures and actual Lua lifecycle execution; no live desktop claim; archive fixtures also reject missing and mismatched per-commit limited-release authorization."
+      "checks": [
+        "33 Node tests, geometry/configuration and editor checks, Bash parsing, Lua desktop hit-testing, official manifest validation and Qt QML parsing pass"
+      ],
+      "source": "a44d7d01e066086ab6cca9b4b95a366f3aeb3be7"
     },
     {
-      "name": "Qt QML parser and current official manifest validator",
+      "name": "Omarchy 4.0.6 editor",
       "pass": true,
-      "scope": "Parsing and schema compatibility; not host runtime loading"
+      "checks": [
+        "Installed version is shown; Undo restores remove, reorder, drag, add, submenu and catalog edits with identities intact, preserves appearance/opening drafts and text undo, and clears on Save/Cancel",
+        "Six/eight-slot Settings stay centred and fully on-screen at corners and side edges; tabs, presets and full slider drags retain their opening frame",
+        "Small, Medium and Large stage exact sizes without resizing Settings; Cancel preserves the saved size",
+        "Dragging from the searchable catalog assigns a draft slot; dropping in the centre or outside cancels; Cancel preserves the file",
+        "Several catalog assignments and a size preset save/reopen together, including submenus and app IDs; metadata and click/keyboard alternatives work",
+        "Real pointer drag changes the draft; Cancel leaves the saved arrangement unchanged",
+        "Keyboard and pointer reordering save/reopen correctly, retain metadata, and unchanged Save finishes",
+        "Opening controls persist, bindings update and recover after reload, invalid keys are blocked, conflicts preserve the file and working bindings",
+        "Custom command editor saves and launches a program with exact arguments, including spaces and shell punctuation",
+        "Submenu actions can be edited, added, reordered, removed, saved and launched; nested Cancel discards its draft",
+        "The editor retains add/save/reopen/remove from five to eight shortcuts and prevents fewer than five",
+        "Settings remain inside the nested monitor at all four pointer corners"
+      ],
+      "omarchy": "237f1b4071a0bff2296c6d740ba2b9fd695ebfa0",
+      "display": {
+        "width": 944,
+        "height": 1150,
+        "scale": 1
+      }
     },
     {
-      "name": "Strict publication/security static validation",
+      "name": "Shapes",
       "pass": true,
-      "scope": "No errors or findings; capabilities require review; not a security audit"
+      "checks": [
+        "Shape and five-slot edits update the polygon preview; dragging works, the panel stays fixed and Cancel preserves legacy settings",
+        "Polygon saves and reopens with metadata intact; cancelling a switch back to Circle retains Polygon",
+        "5 shortcuts: polygon sectors hover correctly, the circular hub works, empty corners dismiss, and submenu/back navigation preserves geometry",
+        "6 shortcuts: polygon sectors hover correctly, the circular hub works, empty corners dismiss, and submenu/back navigation preserves geometry",
+        "7 shortcuts: polygon sectors hover correctly, the circular hub works, empty corners dismiss, and submenu/back navigation preserves geometry",
+        "8 shortcuts: polygon sectors hover correctly, the circular hub works, empty corners dismiss, and submenu/back navigation preserves geometry",
+        "Circle can be restored and saved for five shortcuts; circular sectors retain their full round hit areas"
+      ],
+      "display": {
+        "width": 944,
+        "height": 1150,
+        "scale": 1
+      }
     },
     {
-      "name": "Owner test of published v0.1.1",
+      "name": "Files",
       "pass": true,
-      "evidence": "I\u2019ve tested v0.1.1 now myself and it works fine.",
-      "scope": "Owner-reported test of the published release on his XPS. Individual test steps and new instrumented logs were not supplied."
+      "checks": [
+        "Original Files shortcut opens its circular menu by pointer and keyboard; both pages, centre-back and Escape preserve geometry and settings",
+        "Home opens the correct native Files location",
+        "Recent opens the correct native Files location",
+        "Starred opens the correct native Files location",
+        "Downloads opens the correct native Files location",
+        "Documents opens the correct native Files location",
+        "Pictures opens the correct native Files location",
+        "Music opens the correct native Files location",
+        "Videos opens the correct native Files location",
+        "Trash opens the correct native Files location",
+        "Agents still opens and returns normally",
+        "Settings recognises the upgraded Files slot without rewriting the saved configuration"
+      ],
+      "scope": "Actual Nautilus locations checked through FileManager1 D-Bus properties; test config and private user-directory fixtures restored"
+    },
+    {
+      "name": "Current-shell Undo and version",
+      "pass": true,
+      "checks": [
+        "Installed version is shown; Undo restores remove, reorder, drag, add, submenu and catalog edits with identities intact, preserves appearance/opening drafts and text undo, and clears on Save/Cancel"
+      ],
+      "omarchy": "57e4d3d1294e02dd3866a066e2f7276bd86c9938",
+      "display": {
+        "width": 944,
+        "height": 1150,
+        "scale": 1
+      }
+    },
+    {
+      "name": "Compact Settings",
+      "pass": true,
+      "checks": [
+        "Installed version is shown; Undo restores remove, reorder, drag, add, submenu and catalog edits with identities intact, preserves appearance/opening drafts and text undo, and clears on Save/Cancel",
+        "Six/eight-slot Settings stay centred and fully on-screen at corners and side edges; tabs, presets and full slider drags retain their opening frame"
+      ],
+      "omarchy": "57e4d3d1294e02dd3866a066e2f7276bd86c9938",
+      "display": {
+        "width": 640,
+        "height": 760,
+        "scale": 1
+      }
+    },
+    {
+      "name": "Installed-app launching",
+      "pass": true,
+      "checks": [
+        "An installed app is selected from the catalog, saved by desktop ID and launches a real new Ghostty window after Orb dismisses; only the new window is closed",
+        "An installed app is selected from the catalog, saved by desktop ID and launches a real new Ghostty window after Orb dismisses; only the new window is closed"
+      ],
+      "fallback_on_406": true,
+      "native_service_on_current": true
+    },
+    {
+      "name": "Native install/upgrade/removal",
+      "pass": true,
+      "checks": [
+        "Install the published v0.1.1 Git source with an eight-slot legacy layout",
+        "Upgrade through the native manager to the exact v0.2.0 candidate; byte-preserve legacy settings, metadata, custom size and eight slots",
+        "Disable removes both bindings; enable and compositor reload restore exactly one keyboard and desktop binding",
+        "Native removal unloads the overlay and bindings while retaining settings and unrelated shell configuration",
+        "A fresh native Git install creates the default six-slot configuration, loads Settings and registers one shortcut automatically",
+        "Repeated open/Escape and unchanged update work; fresh removal preserves the generated configuration and removes the owned binding"
+      ],
+      "source": "a44d7d01e066086ab6cca9b4b95a366f3aeb3be7",
+      "legacy": "343207fe59ee08875b5f263337c72c8b957ce583",
+      "omarchy": "237f1b4071a0bff2296c6d740ba2b9fd695ebfa0",
+      "scope": "Real plugin manager with a private local Git origin; original nest link and configuration restored. No host uninstall."
     }
   ],
-  "upstream_contracts": {
-    "omarchy": "81fd2d23ca6e3462183a4dc8360de3113fa8d80c",
-    "hyprland": "12f242511a9c0fe8a884a9d90511bbbbe044f067"
+  "runtime_sha256": {
+    "ActionEditor.qml": "e2944761f6de7fab506e0fb50fdd4a1d7f7fedb6a622f48870e17c15b616730b",
+    "ActionIcon.qml": "ef5e28d69f5a13618b81d5044e36041e863ef37c4492058020f03b313e008db3",
+    "ActionPicker.qml": "c5d7f12dd92bb6745ba72086cd1b036f9750c402e394586b06534ae351c6ba65",
+    "AppLibraryCompat.qml": "ba0c00dd309c4ff58bff4dcdc96ce1a7515abf8e88dc0e99356ec0ac8b46015c",
+    "BindingLifecycle.js": "9bd14aa2d9085ebca4d3e4b2185dc7fc362720c13d3e15052ff880ed5b1f2a89",
+    "EditorButton.qml": "59dd71914cb425e8adae7bcefc0a7777f09432c88b108a17f1bc6df054567e90",
+    "EditorLabel.qml": "c77dfb5c75e5461b700635cb4095d34811f2c1c17515d4709fa534f11c733869",
+    "LineIcon.qml": "1de7dbc09e72d0c6d6a59c05ef346cef7ca5d60f55d4a4b85caa0def157a532b",
+    "Model.js": "31d4f52573d8c74c0684f28fe5d4e6859e73e81cf8336fb4b9e1a44f94f813b3",
+    "OrbOverlay.qml": "8593a533cf43e22b3845fd873f06e5df0b5182eb715429f1de24f84afec93b89",
+    "SettingsPanel.qml": "c57dc6d0bc83f53b37647b60ee88ef28b5a62056894ba32fcac0ce42d7f4712e",
+    "ShortcutHistory.js": "671e3029002e6fbfa79f8c45611c4cc15e9af4e3e1eeceb387ecf8900dd97f66",
+    "VERSION": "1f930dd1f133c1f97a94fe3acb8db34372cf4c01ffdb2b3ff4ca72f9494121e9",
+    "Wheel.qml": "79926ad1a61e76ec526863cea683c2f76a514e582da2759e9c76c10134d99199",
+    "WheelPreview.qml": "c1f6cf18471be1b6d6378854c9306e512c27917a8853d038fb789ddbf1a18367",
+    "WheelSurface.qml": "419d0970932d84229bccbfdb4748d1db5b006b4020c382d1e37b82c9fb0239be",
+    "config.example.json": "8e7f990700585f4ff5e4f3aa01335f4e2b9bdb554916c0289ca1ba6a5cdac32c",
+    "desktop-click.lua": "3bb4bffe3838070b1cc16acddc34899f1570fdef4736ca6258726db4bf2b0734",
+    "manifest.json": "5301be1759570e02ca4ebc03f9f4a345b89d794d4ac5f11b3d0570b9fe576290",
+    "scripts/agent": "8778f102fc112e84fd32a4267798ef55deaab7799bc34970e6fb7fcf78fada42",
+    "scripts/agents": "d4538cb1c23aff7bcee4f41884482821ad868bd7b208ec815789bfb2c1a936aa",
+    "scripts/files": "a28fafd85a142c0d494e224a6dbc8b612076a976eb0ed5ddbad6acc033b19313",
+    "scripts/launch": "00c2aa2c6313e575ffa0e281defeb8831d4f892f20923194d550c459322dc391",
+    "scripts/setup": "a2690415fb195dc909aaa9b87840800ae7d373cbca513812152f557371aa942f"
   },
-  "pending": [
-    "Independent instrumented results from the native lifecycle harness; owner confirmation does not enumerate every install/update/disable/remove test step."
+  "source_reconciliation": {
+    "precommit_base": "6d744ba9265b209cede30d7d7499036a5aebd846",
+    "candidate": "a44d7d01e066086ab6cca9b4b95a366f3aeb3be7",
+    "observed_runtime_hashes_match_candidate": true,
+    "note": "Full editor/shape/Files and app-launch runs began before the candidate commit. Their recorded runtime hashes were compared with the committed files. Clean-candidate native checks, lifecycle and compact Settings runs use input_commit directly."
+  },
+  "upstream_contracts": {
+    "omarchy_406": "237f1b4071a0bff2296c6d740ba2b9fd695ebfa0",
+    "omarchy_current": "57e4d3d1294e02dd3866a066e2f7276bd86c9938",
+    "quickshell": "0.3.2 (2b4501a282689792b62e94f3fb30d8f512324fe6), distributed by Omarchy",
+    "hyprland": "0.56.2 (efb50993780079460b0cbed1363e2166a2de1d9f)",
+    "qt": "6.12.0",
+    "documented_older_apis": [
+      "https://quickshell.org/docs/v0.2.1/types/Quickshell/QsWindow/",
+      "https://quickshell.org/docs/v0.2.1/types/Quickshell.Hyprland/Hyprland/"
+    ]
+  },
+  "screenshots": [
+    {
+      "file": "docs/v0.2.0-circle.png",
+      "width": 436,
+      "height": 493,
+      "sha256": "48e0c2cf6046ee7b3958acc75d89400bf6201ce16ad4a195ccb3aaced776b803",
+      "shape": "circle",
+      "count": 6,
+      "settings": false,
+      "caption": "Browser",
+      "capture": "Native grim crop inside owned Omadev slot 5; visually inspected; no image generation or composition"
+    },
+    {
+      "file": "preview.png",
+      "width": 436,
+      "height": 493,
+      "sha256": "99b8e983300f98e56fd817fcd64dd1f8302994ca2622f3bc8e8c80a697081c33",
+      "shape": "polygon",
+      "count": 5,
+      "settings": false,
+      "caption": "Browser",
+      "capture": "Native grim crop inside owned Omadev slot 5; visually inspected; no image generation or composition"
+    },
+    {
+      "file": "docs/v0.2.0-files.png",
+      "width": 436,
+      "height": 493,
+      "sha256": "1b9393a6ce7afcef4b9aeb87b9442075641d13aac4c5ba164427ae28ec145661",
+      "shape": "polygon",
+      "count": 6,
+      "settings": false,
+      "caption": "Page 1 / 2",
+      "capture": "Native grim crop inside owned Omadev slot 5; visually inspected; no image generation or composition"
+    },
+    {
+      "file": "docs/v0.2.0-settings.png",
+      "width": 793,
+      "height": 675,
+      "sha256": "ac438a460539fd6b5eed64a7fa1e78871f74c53c0854450e08d550e93d3254a2",
+      "shape": "polygon",
+      "count": 6,
+      "settings": true,
+      "caption": "Orb settings · click to open",
+      "capture": "Native grim crop inside owned Omadev slot 5; visually inspected; no image generation or composition"
+    },
+    {
+      "file": "docs/v0.2.0-browser.png",
+      "width": 793,
+      "height": 675,
+      "sha256": "4225ed7874974c189ad5aa4be5b4c1866b3e1f9d7c0f04797505f11348b52291",
+      "shape": "polygon",
+      "count": 6,
+      "settings": true,
+      "caption": "Orb settings · click to open",
+      "capture": "Native grim crop inside owned Omadev slot 5; visually inspected; no image generation or composition"
+    },
+    {
+      "file": "docs/v0.2.0-appearance.png",
+      "width": 793,
+      "height": 675,
+      "sha256": "85c30dce9c418ae26f990a203ac557e030e05ef450c355fa617e336239c13431",
+      "shape": "polygon",
+      "count": 6,
+      "settings": true,
+      "caption": "Orb settings · click to open",
+      "capture": "Native grim crop inside owned Omadev slot 5; visually inspected; no image generation or composition"
+    }
+  ],
+  "notes": [
+    "Reproduced OverlayWindow is not a type on the unmodified 4.0.6 source before the fix. Further native tests exposed the absent Style.duration and a QVariantList manifest-kinds bug that omits the app-library capability; Orb supplies compatible fallbacks.",
+    "The first cold Nautilus launch exceeded the original ten-second harness deadline. The actual window/location subsequently appeared; the repeat with a thirty-second startup budget passed all nine locations.",
+    "An initial app-launch fixture refused shared application directories before writing anything. Final checks use an existing installed app and close only their new window.",
+    "The 4.0.6 checkout was temporarily instrumented to confirm its manifest-kinds bug, then restored byte-for-byte to the release source before acceptance.",
+    "No video recorded. Historical owner reports are retained separately in docs/history/v0.1.1-ACCEPTANCE.json."
   ],
   "limitations": [
+    "The 4.0.6 source runs with this machine's installed Quickshell 0.3.2 and Hyprland 0.56.2. The reporter's complete historical OS and Quickshell 0.2.x package set were not recreated; older APIs were checked against official documentation.",
     "Physical multi-monitor, hotplug, fractional scaling and other architectures remain unverified.",
-    "Hard shell crashes may leave runtime bindings until shell restart or compositor reload."
-  ],
-  "previous_release_acceptance": {
-    "status": "passed",
-    "input_commit": "386e5b4f632de25492b2273b59d532090e148c63",
-    "date": "2026-10-20T01:17:46Z",
-    "platform": "Owner-confirmed XPS acceptance; historical instrumented target: Dell XPS 9320, eDP-1 1920x1200, scale 1",
-    "commands": [
-      "./tests/run"
-    ],
-    "results": [
-      {
-        "name": "Portable suite: 22 Node tests, geometry/configuration checks and Bash parsing",
-        "pass": true,
-        "evidence": "Automated in release preparation; runtime/workflow tree matches input_commit"
-      },
-      {
-        "name": "Native validation, six-seven-eight-six saved-slot flow, physical shortcut/focus, light/dark captions and reinstall",
-        "pass": true,
-        "evidence": "Owner reported all requested final XPS checks passed on latest main; not independently re-observed in this environment"
-      }
-    ],
-    "owner_confirmation": {
-      "name": "Tom Ballard",
-      "date": "2026-10-20T01:17:46Z",
-      "tested_source": "2d271b065ce1ebc78eb314c1bd680479e78e684e",
-      "statement": "I\u2019ve tested everything and it all works. The submission looks good and I confirm everything. I made the wallpaper so :)",
-      "scope": "All final checks and five marketplace checklist statements presented in the preceding approval request",
-      "wallpaper_author": "Tom Ballard"
-    },
-    "source_reconciliation": {
-      "owner_tested_commit": "2d271b065ce1ebc78eb314c1bd680479e78e684e",
-      "input_commit": "386e5b4f632de25492b2273b59d532090e148c63",
-      "changes": [
-        "README.md",
-        "CHANGELOG.md",
-        "CREDITS.md",
-        "docs/MARKETPLACE-ISSUE.md",
-        "docs/RELEASE-NOTES.md"
-      ],
-      "runtime_and_workflows_unchanged": true,
-      "scope": "Only release documentation and confirmed attestations changed after owner testing. Portable checks rerun on the release document tree."
-    },
-    "limitations": [
-      "Physical multi-monitor, hotplug, fractional scaling and other architectures remain unverified.",
-      "Current full Omarchy SHA and fresh native logs were not independently collected for the owner-reported final pass. The last instrumented Omarchy SHA remains in historical_acceptance.",
-      "Static checks are not a security audit or marketplace approval."
-    ],
-    "historical_acceptance": {
-      "status": "passed-with-limitations",
-      "input_commit": "ede511ff8ea08fd9a7c5d428d910a01978c0bcfb",
-      "date": "2026-10-18T17:51:08.699Z",
-      "platform": "Dell XPS 9320; eDP-1 1920x1200; scale 1",
-      "omarchy_version": "dev 5f7aaeb8c",
-      "commands": [
-        "./tests/native",
-        "ORB_POINTER=\"$PWD/artifacts/input/pointer\" node tests/live.cjs --menus-only --agents --settings",
-        "ORB_POINTER=\"$PWD/artifacts/input/pointer\" node tests/live.cjs --actions --theme"
-      ],
-      "automated_checks": [
-        "Repository identity and policy checks",
-        "Geometry and input hit regions for zero through six sectors",
-        "Configuration validation",
-        "Installed manifest validator and Qt QML parser"
-      ],
-      "live_desktop_checks": [
-        {
-          "name": "Keyboard navigation, wrap, numeric selection and Escape",
-          "pass": true
-        },
-        {
-          "name": "12 open/cancel cycles, repeated summon and toggle, one layer",
-          "pass": true
-        },
-        {
-          "name": "All four physical screen corners stay inside the bar and monitor bounds",
-          "pass": true
-        },
-        {
-          "name": "Real pointer hover, keyboard takes over, outside click dismisses",
-          "pass": true
-        },
-        {
-          "name": "Real action: Browser",
-          "pass": true,
-          "class": "chromium"
-        },
-        {
-          "name": "Real action: Terminal",
-          "pass": true,
-          "class": "com.mitchellh.ghostty"
-        },
-        {
-          "name": "Real action: Files",
-          "pass": true,
-          "class": "org.gnome.Nautilus"
-        },
-        {
-          "name": "Real action: Screenshot",
-          "pass": true,
-          "layers": [
-            "omasnap"
-          ]
-        },
-        {
-          "name": "Real action: Themes",
-          "pass": true,
-          "layers": [
-            "omarchy-image-selector"
-          ]
-        },
-        {
-          "name": "Real action: Plugins",
-          "pass": true,
-          "layers": [
-            "omarchy-menu"
-          ]
-        },
-        {
-          "name": "Compact circular menus, installed-only agents, centre-click back and Escape",
-          "pass": true,
-          "agents": [
-            "Claude Code",
-            "Codex",
-            "Grok"
-          ]
-        },
-        {
-          "name": "Live shell theme token change to Everforest and restoration; app configs untouched",
-          "pass": true
-        },
-        {
-          "name": "Escape restores previous window focus and removes exclusive layer",
-          "pass": true
-        }
-      ],
-      "additional_live_checks": [
-        "Pointer opens Agents and launches Codex; default-agent file unchanged",
-        "Pointer activates circular Settings \u2192 Themes and Settings \u2192 Plugins",
-        "Centre-click returns to the main wheel without dismissing",
-        "Still images visually inspected: circular Settings and Agents, same 280px diameter"
-      ],
-      "limitations": [
-        "Physical summon key chord needs human confirmation; automated checks use IPC and real Wayland input.",
-        "Multiple physical monitors, fractional scaling and hotplug not tested live.",
-        "Screenshot opens and cancels capture UI; saving a capture not tested.",
-        "Theme test changes shell palette through IPC and restores it; full desktop/application retint not tested.",
-        "More than six submenu actions support paging; paging controls not yet tested live.",
-        "Quattro rescan retained cached QML during this update; a supported omarchy restart shell was required to load changed runtime code.",
-        "No video recording, release, marketplace listing or remote branch push."
-      ],
-      "test_notes": [
-        "The initial focused attempt detected stale rectangular QML. After shell restart, test input was paced to allow compositor focus delivery; focused and full runs passed.",
-        "tests/live.cjs includes uncommitted-at-input-commit harness pacing improvements; application runtime matches input_commit."
-      ],
-      "agent_marks_update": {
-        "input_commit": "29c3644",
-        "date": "2026-10-18T18:01:44.074Z",
-        "checks": [
-          "./tests/native passed, including ActionIcon.qml parsing",
-          "scripts/agents returned claude/codex/grok icon IDs for the three installed clients",
-          "Live --menus-only --glyphs passed: circular menu navigation, centre-back, Escape and focus restoration",
-          "Still images visually inspected on original dark palette and Catppuccin Latte: all three product marks present, Codex/Grok switch white to dark, Claude remains orange",
-          "Original palette restored; no video recorded"
-        ],
-        "limitations": [
-          "No repeat of all launcher actions for this visual-only change; previous launch acceptance remains recorded above.",
-          "Quattro required a shell restart to clear cached QML before the live check."
-        ]
-      },
-      "omarchy_hub_update": {
-        "input_commit": "dea1c13",
-        "date": "2026-10-18T18:10:01.442Z",
-        "checks": [
-          "./tests/native passed",
-          "Official SVG fetched from https://omarchy.org/brand/omarchy-logo.svg",
-          "Live stills visually inspected on dark and Catppuccin Latte palettes",
-          "Submenu centre returns to root; root logo centre dismisses",
-          "Original palette, pointer and focused window restored; no video recorded"
-        ],
-        "limitations": [
-          "Focused visual and centre-navigation check only; prior broader action acceptance remains above."
-        ]
-      },
-      "settings_panel_update": {
-        "input_commit": "41bd451",
-        "date": "2026-10-18T18:19:03.834Z",
-        "automated": [
-          "./tests/native passed"
-        ],
-        "live": [
-          "Centre opens native panel; Cancel/Escape discards size and animation drafts",
-          "Save persists settings; reopening loads them; actions, shortcut and other fields preserved",
-          "Original size and animation restored through the panel"
-        ],
-        "visual": "Settings panel and glowing centre reviewed in real XPS still captures.",
-        "scope": "Panel edits wheel size and opening animation; shows the current summon shortcut. Action editing and shortcut editing are not included in this small panel.",
-        "notes": [
-          "Supersedes the configuration-editor implementation; centre activation now opens the hosted settings panel.",
-          "The first run passed Save, Cancel, reopening, restoration and all four screen-edge checks, then an exact-window-count assertion detected an unrelated iOMARCHY boot-test terminal. That terminal was identified and left untouched.",
-          "The repeat passed Save/Cancel/restoration, but a later screen-edge open timed out on the concurrently active desktop. A single uninterrupted full run is not claimed.",
-          "Original size, animation, focused window and pointer restored after verification. No video recorded."
-        ]
-      },
-      "slot_picker_update": {
-        "input_commit": "f2049df",
-        "date": "2026-10-18T19:25:50.561Z",
-        "automated": [
-          "./tests/native passed; desktop IDs, all six slot merges, preservation and conflict handling validated"
-        ],
-        "live": [
-          "Installed-app search resolves a desktop entry and Save persists it",
-          "Selecting an installed app launches a real Files window after Orb dismisses",
-          "Postcard replaces Screenshot, survives reopening, and preserves all other settings",
-          "Clicking the bottom wheel slot opens the real Postcard editor",
-          "Six-slot settings panel stays within all four screen corners"
-        ],
-        "additional": [
-          "All six slot choices and Cancel passed on be1d716 before a later app-launch timeout; focused launch repeat passed on f2049df",
-          "Real slot-list and Postcard-picker stills visually inspected"
-        ],
-        "notes": [
-          "Your existing Ghostty, Postcard and Flea choices preserved",
-          "Fixed hidden search retaining keyboard focus and Enter bubbling into the returned slot list",
-          "A later appearance-regression run timed out at centre activation on the active desktop; no fresh full appearance pass claimed",
-          "No video recorded"
-        ]
-      },
-      "desktop_right_click_update": {
-        "input_commit": "a1ffc4e",
-        "date": "2026-10-18T19:24:36.684Z",
-        "report": [
-          "Real right-click on empty desktop opens Orb; Escape dismisses",
-          "Left-click remains unchanged; Super+right-click resize binding preserved",
-          "Right-click inside Files passes through without opening Orb; context-menu still captured",
-          "Hyprland configuration remains clean"
-        ],
-        "automated": [
-          "Lua hit-testing and passthrough tests passed",
-          "Hyprland configerrors empty after installation and live checks"
-        ],
-        "visual": "Files context menu confirmed in real still; Orb did not intercept the click.",
-        "limitations": [
-          "Conservative panel rectangles exclude transparent dock area",
-          "Special workspaces intentionally pass through",
-          "Physical multi-monitor and fractional-scale behaviour not tested"
-        ],
-        "notes": [
-          "Initial guard corrected for windows on other workspaces and the additional Wallpaper Engine background surface",
-          "Desktop right-click replaces the wallpaper right-double-click theme gesture; application context menus and Super+right-click resize remain",
-          "Workspace, focus and pointer restored; only the test Files window closed"
-        ]
-      },
-      "expanded_slots_and_starters": {
-        "input_commit": "905aa2a",
-        "date": "2026-10-18T20:05:23.111Z",
-        "report": [
-          "All saved slots select by pointer; number key selects the eighth slot",
-          "Make something cool opens a circular three-action submenu; Escape returns to the full wheel",
-          "Remove edits the draft; Cancel preserves your saved eight-slot layout",
-          "All three starter prompts exactly match the installed Omarchy Agents panel; no prompt executed"
-        ],
-        "automated": [
-          "Native/QML checks passed; model tests cover 6\u20138 slots, add/remove merges, metadata preservation and concurrent structural changes"
-        ],
-        "visual": "Eight-slot and Make something cool submenu stills captured. Compact layout verification supersedes in-sector label readability below 300px.",
-        "limitations": [
-          "Initial six-slot add/save live harness was interrupted by focus/shell reloads and then the user saved an eight-slot layout; no uninterrupted add/save/remove end-to-end pass claimed. The later non-mutating eight-slot, submenu and remove/cancel check passed.",
-          "Starter command arrays match current upstream prompts and launcher; no agent task executed during verification."
-        ]
-      },
-      "compact_layout": {
-        "input_commit": "29e3c46",
-        "date": "2026-10-18T20:09:21.410Z",
-        "report": [
-          "280px: icons only, full pointer/keyboard caption, circular submenu caption",
-          "303px: sector labels visible, full pointer/keyboard caption, circular submenu caption"
-        ],
-        "visual": "Both 280px icon-only and 303px labelled screenshots visually reviewed; full Make something cool caption is visible below the wheel.",
-        "notes": [
-          "Native application/brand icons retain their original artwork and colours.",
-          "Current chosen diameter restored; saved eight-slot layout preserved. No recording."
-        ]
-      },
-      "icons_only_all_sizes": {
-        "input_commit": "feac1fa",
-        "date": "2026-10-18T20:20:36.080Z",
-        "report": [
-          "280px: icons only, full pointer/keyboard caption, circular submenu caption",
-          "303px: icons only, full pointer/keyboard caption, circular submenu caption"
-        ],
-        "visual": "303px still visually reviewed: centred icons, no sector labels, full Make something cool caption underneath.",
-        "notes": [
-          "Supersedes the 300px breakpoint. Original diameter restored."
-        ]
-      },
-      "caption_scaling": {
-        "input_commit": "ca112249cf16e710808ebab72eeafd37071fa224",
-        "date": "2026-10-18T21:01:01.122Z",
-        "report": [
-          "280px: 11px caption, full pointer/keyboard and submenu labels, footer within screen edges",
-          "467px: 18px caption, full pointer/keyboard and submenu labels, footer within screen edges",
-          "700px: 28px caption, full pointer/keyboard and submenu labels, footer within screen edges"
-        ],
-        "visual": "467px still reviewed; caption and pill scale together. Original diameter restored."
-      },
-      "release_preparation": {
-        "status": "not-yet-tag-ready",
-        "input_commit": "a1186e2877871011ea282b2f03b8b874f6c95762",
-        "date": "2026-10-19T01:23:12.150Z",
-        "omarchy_commit": "57e4d3d1294e02dd3866a066e2f7276bd86c9938",
-        "automated": [
-          "./tests/native passed: portable/model/Lua checks, official manifest validation and QML parsing",
-          "Archive fixture passed: complete source extraction, runnable checks, source identity, SPDX package identity, sizes and complete checksums; lightweight tags and dirty trees rejected"
-        ],
-        "live": [
-          "Current preview captured on the real XPS, reviewed without application content; no video recorded"
-        ],
-        "remaining": [
-          "Uninterrupted six-to-eight-to-six slot Save flow",
-          "Human physical Super+Alt+O shortcut confirmation",
-          "Green GitHub CI and reviewed merge to default branch",
-          "Final source acceptance, annotated tag and verification of downloaded draft assets"
-        ],
-        "notes": [
-          "Historical acceptance and its limitations remain unchanged above.",
-          "Temporary tags created only in disposable archive-test repositories; no candidate tag or release published.",
-          "Release skill Python preflight was not run, respecting the no-Python constraint."
-        ]
-      },
-      "removal_reinstall": {
-        "date": "2026-10-19T01:27:06.973Z",
-        "input_commit": "f3923a4e36ce1a806ebe964126d241343ed68596",
-        "omarchy_commit": "57e4d3d1294e02dd3866a066e2f7276bd86c9938",
-        "checks": [
-          {
-            "name": "Removal unloads Orb, deletes its checkout/module and removes both owned bindings",
-            "pass": true
-          },
-          {
-            "name": "Removal preserves Orb configuration, unrelated bindings and shell settings",
-            "pass": true
-          },
-          {
-            "name": "Fresh Git reinstall enables the exact candidate with one shortcut and the configured right-click binding",
-            "pass": true
-          },
-          {
-            "name": "Repeating install is idempotent; no duplicate bindings or changed settings",
-            "pass": true
-          },
-          {
-            "name": "Three live summon/Escape cycles work; settings retain all slots, size and animation",
-            "pass": true
-          },
-          {
-            "name": "Dismissal restores the previously focused window",
-            "pass": true
-          }
-        ],
-        "previous_install": "ca112249cf16e710808ebab72eeafd37071fa224",
-        "config_sha256": "87e27e5b682d30ad32dc06fbc9e5669721ee274657daffff9aad7f764b4838de",
-        "slot_count": 8,
-        "diameter": 360,
-        "status": "passed",
-        "harness": "tests/lifecycle-live.cjs",
-        "harness_sha256": "0df153738b2b31a874a489ef68557da330ce39deab4c1220a3f7374d51d17c85",
-        "notes": [
-          "Live test against the actual XPS shell; no nested desktop or video.",
-          "Orb configuration was byte-for-byte preserved; unrelated binding content and shell settings matched.",
-          "The test harness was untracked at input_commit; its digest records the executed version.",
-          "No runtime changes were required. Physical shortcut and full slot Save lifecycle remain separate checks."
-        ]
-      }
-    }
-  },
-  "native_runtime_commit": "554bb5e4a72e00af28caa7a602f6e421bf095a01",
-  "release_authorization": {
-    "actor": "Tom Ballard",
-    "version": "0.1.1",
-    "input_commit": "ec3d6e752ed3240dcc7bc168cd011a1aeefcf0b2",
-    "statement": "Ok let\u2019s release v0.1.1 then.",
-    "date": "2026-10-20T01:43:26.224174+00:00",
-    "scope": "Owner authorized publication after being informed that portable checks pass and new XPS lifecycle verification is pending. This records publication authorization, not live acceptance."
-  },
-  "released_commit": "343207fe59ee08875b5f263337c72c8b957ce583",
-  "owner_confirmation": {
-    "name": "Tom Ballard",
-    "date": "2026-10-20T01:51:29.636885+00:00",
-    "version": "0.1.1",
-    "tested_source": "343207fe59ee08875b5f263337c72c8b957ce583",
-    "statement": "I\u2019ve tested v0.1.1 now myself and it works fine.",
-    "scope": "Owner-reported test of the published release on his XPS. Individual test steps and new instrumented logs were not supplied."
-  }
+    "Nested input tests do not establish new physical-key or host focus-restoration acceptance. Prior owner reports remain historical.",
+    "A hard shell crash can leave runtime bindings until shell restart or compositor reload.",
+    "Static checks are not a security audit or marketplace approval."
+  ]
 }
