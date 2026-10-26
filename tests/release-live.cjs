@@ -16,7 +16,7 @@ const legacy='343207fe59ee08875b5f263337c72c8b957ce583';
 run('git','merge-base','--is-ancestor',legacy,source);
 const oldConfig=fs.readFileSync(config,'utf8'),oldShell=fs.readFileSync(shell,'utf8'),link=fs.readlinkSync(target);
 const unrelatedShell=value=>{const s=JSON.parse(value);s.plugins=(s.plugins||[]).filter(p=>p.id!==id);return s;};
-const baselineErrors=run('hyprctl','configerrors'),isOrb=b=>/^(Orb shortcut wheel|Orb on empty desktop) \[orb:/.test(b.description||'');
+const baselineErrors=run('hyprctl','configerrors'),isOrb=b=>/^(Orb shortcut wheel|Orb on empty desktop|Orb mouse button) \[orb:/.test(b.description||'');
 const binds=()=>json('hyprctl','binds','-j').filter(isOrb);
 const key=k=>run('wtype','-s','80','-k',k,'-s','80');
 const report={date:new Date().toISOString(),input_commit:source,omarchy:run('git','-C',process.env.OMARCHY_PATH,'rev-parse','HEAD'),legacy,checks:[]};

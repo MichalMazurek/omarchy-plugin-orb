@@ -13,6 +13,7 @@
 - Browse actions beside the wheel and drag apps, shortcuts or submenus directly onto slots; click and keyboard assignment remain available.
 - Arrange shortcuts by dragging around a wheel preview, with keyboard and button alternatives.
 - Change the opening shortcut and desktop right-click in Settings, with validation and conflict checks before saving.
+- Open Orb from any place with an optional mouse button. The default code is 277, and you can choose 272–279. The button stays off until you turn it on.
 - Create and edit custom commands, including separate arguments and an icon picker.
 - Add, edit, reorder and remove submenu actions without editing JSON.
 - Keep Settings at its opening size while switching tabs or editing shortcuts and submenus.

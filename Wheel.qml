@@ -69,7 +69,7 @@ Item {
         return typeof Commons.Style.duration === "function" ? Commons.Style.duration(milliseconds) : milliseconds;
     }
     function updateBindings(document) {
-        var signature = JSON.stringify([document.shortcut || "SUPER + ALT + O", document.desktopRightClick === true]);
+        var signature = JSON.stringify(Model.bindingSignature(document));
         if (signature === bindingSignature) return;
         bindingSignature = signature;
         requestSetup();
@@ -227,7 +227,8 @@ Item {
         var checked = Model.parse(JSON.stringify(settingsCard.draft()), null);
         if (checked.error) { settingsError = checked.error; return; }
         settingsSaving = true; saveWatchdog.restart();
-        if (checked.config.shortcut !== settingsCard.original.shortcut || checked.config.desktopRightClick !== settingsCard.original.desktopRightClick)
+        if (checked.config.shortcut !== settingsCard.original.shortcut || checked.config.desktopRightClick !== settingsCard.original.desktopRightClick
+            || checked.config.mouseOpen !== settingsCard.original.mouseOpen || checked.config.mouseButton !== settingsCard.original.mouseButton)
             bindingCheck.running = true;
         else reloadForSave();
     }
@@ -266,6 +267,7 @@ Item {
             shape: root.config.shape, draftShape: settingsCard.shape,
             draftDiameter: settingsCard.diameter, draftAnimation: settingsCard.animation,
             draftShortcut: settingsCard.shortcut, draftDesktopRightClick: settingsCard.desktopRightClick,
+            draftMouseOpen: settingsCard.mouseOpen, draftMouseButton: settingsCard.mouseCheck.value,
             preview: settingsCard.previewStatus(), selectedSlot: settingsCard.selectedSlot,
             settingsLayout: settingsCard.layoutStatus(),
             settingsControls: root.settingsOpen ? settingsCard.controls() : [],
@@ -349,7 +351,8 @@ Item {
             if (!root.settingsSaving) return;
             var error = "Could not check existing shortcuts. Try saving again.";
             if (code === 0) try {
-                error = Model.bindingConflict(JSON.parse(existingBindings.text), settingsCard.draft().shortcut, settingsCard.desktopRightClick);
+                var opening = settingsCard.draft();
+                error = Model.bindingConflict(JSON.parse(existingBindings.text), opening.shortcut, opening.desktopRightClick, opening.mouseOpen, opening.mouseButton);
             } catch (failure) {}
             if (error) root.failSettingsSave(error);
             else root.reloadForSave();
